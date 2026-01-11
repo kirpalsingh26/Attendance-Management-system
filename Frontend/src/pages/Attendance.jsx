@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { Check, X, Calendar as CalendarIcon, Clock, User, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, Calendar as CalendarIcon, Clock, User, MapPin, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
@@ -52,8 +52,15 @@ const Attendance = () => {
   // Fetch timetable when component mounts
   useEffect(() => {
     console.log('Attendance page mounted, fetching timetable...');
-    fetchTimetable();
+    handleRefreshTimetable();
   }, []);
+
+  // Function to refresh timetable data
+  const handleRefreshTimetable = async () => {
+    console.log('Refreshing timetable data...');
+    await fetchTimetable();
+    console.log('Timetable data refreshed');
+  };
 
   // Log timetable changes
   useEffect(() => {
@@ -164,11 +171,21 @@ const Attendance = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 relative z-10">
         <div className="mb-10 animate-fade-in">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-1.5 h-12 bg-gradient-to-b from-blue-600 via-indigo-600 to-purple-600 rounded-full shadow-lg"></div>
-            <h1 className="text-5xl sm:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-200 bg-clip-text text-transparent leading-tight tracking-tight">
-              Attendance
-            </h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-1.5 h-12 bg-gradient-to-b from-blue-600 via-indigo-600 to-purple-600 rounded-full shadow-lg"></div>
+              <h1 className="text-5xl sm:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-200 bg-clip-text text-transparent leading-tight tracking-tight">
+                Attendance
+              </h1>
+            </div>
+            <button
+              onClick={handleRefreshTimetable}
+              className="group flex items-center space-x-2 px-5 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all shadow-md hover:shadow-xl"
+              title="Refresh Timetable"
+            >
+              <RefreshCw className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:rotate-180 transition-all duration-500" />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">Refresh</span>
+            </button>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed ml-[26px] font-medium">
             Track your presence with precision and style
