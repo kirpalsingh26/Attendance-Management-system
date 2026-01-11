@@ -111,7 +111,6 @@ router.post('/login', async (req, res) => {
       message: 'Server error during login',
       error: process.env.NODE_ENV === 'production' ? undefined : error.message
     });
-    });
   }
 });
 
