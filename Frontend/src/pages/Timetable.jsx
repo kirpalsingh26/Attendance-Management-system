@@ -127,16 +127,25 @@ const TimetableCreator = () => {
     setError('');
   };
 
-  const removeSubject = (subjectName) => {
-    setFormData({
+  const removeSubject = async (subjectName) => {
+    const updatedFormData = {
       ...formData,
       subjects: formData.subjects.filter(s => s.name !== subjectName),
       schedule: formData.schedule.map(day => ({
         ...day,
         periods: day.periods.filter(p => p.subject !== subjectName)
       }))
-    });
+    };
+    setFormData(updatedFormData);
     setError('');
+    
+    // Auto-save after removing subject
+    if (updatedFormData.subjects.length >= 0) {
+      console.log('Auto-saving after subject removal');
+      await saveTimetable(updatedFormData);
+      setSuccess('Subject removed successfully!');
+      setTimeout(() => setSuccess(''), 2000);
+    }
   };
 
   const addPeriod = (dayIndex) => {
@@ -161,10 +170,19 @@ const TimetableCreator = () => {
     setFormData({ ...formData, schedule: newSchedule });
   };
 
-  const removePeriod = (dayIndex, periodIndex) => {
+  const removePeriod = async (dayIndex, periodIndex) => {
     const newSchedule = [...formData.schedule];
     newSchedule[dayIndex].periods.splice(periodIndex, 1);
-    setFormData({ ...formData, schedule: newSchedule });
+    const updatedFormData = { ...formData, schedule: newSchedule };
+    setFormData(updatedFormData);
+    
+    // Auto-save after removing period
+    if (formData.subjects.length > 0) {
+      console.log('Auto-saving after period removal');
+      await saveTimetable(updatedFormData);
+      setSuccess('Period removed successfully!');
+      setTimeout(() => setSuccess(''), 2000);
+    }
   };
 
   const handleSave = async () => {
