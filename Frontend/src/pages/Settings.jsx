@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Lock, Palette } from 'lucide-react';
+import { User, Lock, Palette, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { userAPI } from '../api';
@@ -9,7 +9,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 
 const Settings = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   
   const [profileData, setProfileData] = useState({
@@ -75,6 +75,13 @@ const Settings = () => {
       setError(err.response?.data?.message || 'Failed to update password');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      await logout();
+      window.location.href = '/login';
     }
   };
 
@@ -362,6 +369,30 @@ const Settings = () => {
                 {user?.id}
               </span>
             </div>
+          </div>
+        </Card>
+
+        {/* Logout Section */}
+        <Card title="Danger Zone" subtitle="Irreversible actions" className="hover:shadow-2xl transition-all duration-300 animate-scale-in backdrop-blur-sm border-2 border-red-200/50 dark:border-red-700/50 shadow-xl rounded-3xl" style={{animationDelay: '0.4s'}}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-200/50 dark:border-red-700/50">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg">
+                <LogOut className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 dark:text-white text-lg">Logout</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                  Sign out of your account
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="group px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 flex items-center space-x-2"
+            >
+              <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <span>Logout</span>
+            </button>
           </div>
         </Card>
       </div>
