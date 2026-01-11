@@ -1,4 +1,8 @@
-require('dotenv').config();
+// Only load .env in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -7,18 +11,10 @@ const connectDB = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB - in serverless, this will be called from api/index.js
-// In development, call it here
-if (process.env.NODE_ENV !== 'production') {
-  connectDB().catch(err => {
-    console.error('Failed to connect to MongoDB:', err.message);
-  });
-} else {
-  // For production/serverless, initialize connection on cold start
-  connectDB().catch(err => {
-    console.error('Failed to connect to MongoDB:', err.message);
-  });
-}
+// Connect to MongoDB
+connectDB().catch(err => {
+  console.error('Failed to connect to MongoDB:', err.message);
+});
 
 // Middleware - CORS must come first
 const allowedOrigins = [
