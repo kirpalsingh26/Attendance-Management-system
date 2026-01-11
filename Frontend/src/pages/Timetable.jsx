@@ -135,8 +135,8 @@ const TimetableCreator = () => {
     const newSchedule = [...formData.schedule];
     newSchedule[dayIndex].periods.push({
       subject: formData.subjects[0]?.name || '',
-      startTime: '09:00',
-      endTime: '10:00',
+      startTime: '08:30',
+      endTime: '09:30',
       teacher: '',
       room: ''
     });
