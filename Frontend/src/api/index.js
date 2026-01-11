@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+// Auto-detect API URL based on environment
+const getBaseURL = () => {
+  // If running on Vercel, use relative path
+  if (window.location.hostname !== 'localhost') {
+    return '/api';
+  }
+  // Otherwise use localhost
+  return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+};
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'

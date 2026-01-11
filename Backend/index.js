@@ -15,16 +15,18 @@ connectDB().catch(err => {
 // Middleware - CORS must come first
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://ams-ardo5khh8-kirpalsingh26s-projects.vercel.app/', // Replace with your actual Vercel URL
+  'http://localhost:5001',
   process.env.CLIENT_URL
 ].filter(Boolean);
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc)
+    // Allow requests with no origin (mobile apps, curl, etc) or same-origin requests
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.some(allowed => origin.startsWith(allowed.replace('*', '')))) {
+    // Allow Vercel preview and production domains
+    if (origin.includes('vercel.app') || 
+        allowedOrigins.some(allowed => origin.startsWith(allowed.replace('*', '')))) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -64,9 +66,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-});
+// Only listen if not in serverless environment
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  });
+}
 
 // Export for Vercel serverless
 module.exports = app;
