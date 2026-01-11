@@ -1,0 +1,14 @@
+# Keep package.json and package-lock.json
+!package.json
+!package-lock.json
+
+# Keep source files
+!*.js
+!routes/**
+!models/**
+!middleware/**
+!config/**
+!utils/**
+
+# Ignore everything else
+*
