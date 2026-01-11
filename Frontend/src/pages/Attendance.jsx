@@ -20,10 +20,15 @@ const Attendance = () => {
   const formatTime12Hour = (time24) => {
     if (!time24) return '';
     const [hours, minutes] = time24.split(':');
-    const hour = parseInt(hours);
+    let hour = parseInt(hours, 10);
+    const min = minutes.padStart(2, '0'); // Ensure minutes are always 2 digits
     const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
+    
+    // Convert to 12-hour format
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    
+    return `${hour}:${min} ${ampm}`;
   };
 
   // Generate calendar days
