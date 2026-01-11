@@ -7,10 +7,12 @@ const connectDB = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB (non-blocking)
-connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB:', err.message);
-});
+// Connect to MongoDB only in development (not in production/serverless)
+if (process.env.NODE_ENV !== 'production') {
+  connectDB().catch(err => {
+    console.error('Failed to connect to MongoDB:', err.message);
+  });
+}
 
 // Middleware - CORS must come first
 const allowedOrigins = [
