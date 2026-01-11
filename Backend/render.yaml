@@ -1,0 +1,3 @@
+# Render Deployment Configuration
+build = "npm install"
+start = "node index.js"
