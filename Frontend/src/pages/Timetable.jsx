@@ -19,26 +19,26 @@ const formatTime12Hour = (time24) => {
   return `${hour12}:${minutes} ${period}`;
 };
 
-// College class timings - 1 hour each for Lectures, 8:30 AM to 4:30 PM
-// Recess: 11:30 AM to 12:30 PM
+// College class timings - 1 hour each for Lectures, 9:00 AM to 4:00 PM
+// Recess: 12:00 PM to 1:00 PM
 const LECTURE_TIMINGS = [
-  { startTime: '08:30', endTime: '09:30' },
-  { startTime: '09:30', endTime: '10:30' },
-  { startTime: '10:30', endTime: '11:30' },
-  // RECESS: 11:30 - 12:30
-  { startTime: '12:30', endTime: '13:30' },
-  { startTime: '13:30', endTime: '14:30' },
-  { startTime: '14:30', endTime: '15:30' },
-  { startTime: '15:30', endTime: '16:30' }
+  { startTime: '09:00', endTime: '10:00' },
+  { startTime: '10:00', endTime: '11:00' },
+  { startTime: '11:00', endTime: '12:00' },
+  // RECESS: 12:00 - 13:00
+  { startTime: '13:00', endTime: '14:00' },
+  { startTime: '14:00', endTime: '15:00' },
+  { startTime: '15:00', endTime: '16:00' },
+  { startTime: '16:00', endTime: '17:00' }
 ];
 
 // Practical class timings - 2 hours each
 const PRACTICAL_TIMINGS = [
-  { startTime: '08:30', endTime: '10:30' },
-  { startTime: '10:30', endTime: '12:30' }, // Ends at recess
-  // RECESS: 11:30 - 12:30 (but practical continues if started at 10:30)
-  { startTime: '12:30', endTime: '14:30' },
-  { startTime: '14:30', endTime: '16:30' }
+  { startTime: '09:00', endTime: '11:00' },
+  { startTime: '11:00', endTime: '13:00' }, // Ends at recess
+  // RECESS: 12:00 - 13:00 (but practical continues if started at 11:00)
+  { startTime: '13:00', endTime: '15:00' },
+  { startTime: '15:00', endTime: '17:00' }
 ];
 
 const TimetableCreator = () => {
