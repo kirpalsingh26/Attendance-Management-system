@@ -105,9 +105,12 @@ router.post('/login', async (req, res) => {
 
     sendTokenResponse(user, 200, res);
   } catch (error) {
+    console.error('Error in login route:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Server error during login',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message
+    });
     });
   }
 });
