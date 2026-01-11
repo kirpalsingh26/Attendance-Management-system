@@ -13,6 +13,7 @@ const Attendance = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [attendance, setAttendance] = useState({});
   const [success, setSuccess] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const selectedDay = format(selectedDate, 'EEEE');
 
@@ -57,9 +58,18 @@ const Attendance = () => {
 
   // Function to refresh timetable data
   const handleRefreshTimetable = async () => {
-    console.log('Refreshing timetable data...');
-    await fetchTimetable();
-    console.log('Timetable data refreshed');
+    setIsRefreshing(true);
+    console.log('Refreshing timetable data from database...');
+    try {
+      await fetchTimetable();
+      console.log('Timetable data refreshed successfully');
+      setSuccess('Timetable refreshed! Updated schedule loaded.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error refreshing timetable:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Log timetable changes
@@ -180,11 +190,14 @@ const Attendance = () => {
             </div>
             <button
               onClick={handleRefreshTimetable}
-              className="group flex items-center space-x-2 px-5 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all shadow-md hover:shadow-xl"
+              disabled={isRefreshing}
+              className="group flex items-center space-x-2 px-5 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all shadow-md hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh Timetable"
             >
-              <RefreshCw className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:rotate-180 transition-all duration-500" />
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">Refresh</span>
+              <RefreshCw className={`w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all duration-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              </span>
             </button>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed ml-[26px] font-medium">
