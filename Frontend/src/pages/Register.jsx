@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, CheckSquare } from 'lucide-react';
+import { Mail, Lock, User, CheckSquare, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -14,6 +14,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -124,27 +125,67 @@ const Register = () => {
               required
             />
 
-            <Input
-              label="Password"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              icon={<Lock className="w-5 h-5 text-gray-400" />}
-              placeholder="••••••••"
-              required
-            />
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2.5 tracking-wide">
+                Password
+              </label>
+              <div className="relative group flex items-center">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300 group-focus-within:text-blue-500 group-focus-within:scale-110 z-10">
+                  <Lock className="w-5 h-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  className="w-full pl-12 pr-12 py-3.5 border-2 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-600 dark:text-white transition-all duration-300 shadow-lg hover:shadow-xl font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110 z-10 focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-            <Input
-              label="Confirm Password"
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              icon={<Lock className="w-5 h-5 text-gray-400" />}
-              placeholder="••••••••"
-              required
-            />
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2.5 tracking-wide">
+                Confirm Password
+              </label>
+              <div className="relative group flex items-center">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300 group-focus-within:text-blue-500 group-focus-within:scale-110 z-10">
+                  <Lock className="w-5 h-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  className="w-full pl-12 pr-12 py-3.5 border-2 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-600 dark:text-white transition-all duration-300 shadow-lg hover:shadow-xl font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110 z-10 focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
 
             <Button
               type="submit"

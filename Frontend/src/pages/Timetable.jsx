@@ -108,10 +108,18 @@ const TimetableCreator = () => {
       ...formData,
       subjects: [...formData.subjects, { ...newSubject }]
     });
+    
+    // Get next available color
+    const usedColors = formData.subjects.map(s => s.color);
+    const availableColors = COLORS.filter(c => !usedColors.includes(c));
+    const nextColor = availableColors.length > 0 
+      ? availableColors[0] 
+      : COLORS[(formData.subjects.length + 1) % COLORS.length];
+    
     setNewSubject({ 
       name: '', 
       type: 'Lecture', 
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      color: nextColor,
       classTime: '',
       teacher: '',
       room: ''
@@ -133,12 +141,16 @@ const TimetableCreator = () => {
 
   const addPeriod = (dayIndex) => {
     const newSchedule = [...formData.schedule];
+    const firstSubject = formData.subjects[0];
+    const isPractical = firstSubject?.type === 'Practical';
+    const defaultTiming = isPractical ? PRACTICAL_TIMINGS[0] : LECTURE_TIMINGS[0];
+    
     newSchedule[dayIndex].periods.push({
-      subject: formData.subjects[0]?.name || '',
-      startTime: '09:00',
-      endTime: '10:00',
-      teacher: '',
-      room: ''
+      subject: firstSubject?.name || '',
+      startTime: defaultTiming.startTime,
+      endTime: defaultTiming.endTime,
+      teacher: firstSubject?.teacher || '',
+      room: firstSubject?.room || ''
     });
     setFormData({ ...formData, schedule: newSchedule });
   };
@@ -275,7 +287,7 @@ const TimetableCreator = () => {
                     <select
                       value={newSubject.type}
                       onChange={(e) => setNewSubject({ ...newSubject, type: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:shadow-md font-medium h-[46px]"
+                      className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 shadow-md font-semibold h-[46px] cursor-pointer appearance-none bg-[length:20px] bg-[position:right_0.75rem_center] bg-no-repeat" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")'}}
                     >
                       <option value="Lecture">Lecture</option>
                       <option value="Practical">Practical</option>
@@ -336,7 +348,7 @@ const TimetableCreator = () => {
                     <select
                       value={newSubject.classTime}
                       onChange={(e) => setNewSubject({ ...newSubject, classTime: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md font-medium"
+                      className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg transition-all duration-300 shadow-md font-semibold cursor-pointer appearance-none bg-[length:20px] bg-[position:right_0.75rem_center] bg-no-repeat" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")'}}
                     >
                       <option value="">Select Time Slot</option>
                       {newSubject.type === 'Practical' ? (
@@ -574,7 +586,7 @@ const TimetableCreator = () => {
                                   updatePeriod(dayIndex, periodIndex, 'startTime', start);
                                   updatePeriod(dayIndex, periodIndex, 'endTime', end);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 shadow-md font-semibold cursor-pointer appearance-none bg-[length:18px] bg-[position:right_0.5rem_center] bg-no-repeat" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")'}}
                               >
                                 {isPractical ? (
                                   <optgroup label="Practical Slots (2 Hours)">
@@ -613,10 +625,11 @@ const TimetableCreator = () => {
                               <select
                                 value={period.subject}
                                 onChange={(e) => updatePeriod(dayIndex, periodIndex, 'subject', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 shadow-md font-semibold cursor-pointer appearance-none bg-[length:18px] bg-[position:right_0.5rem_center] bg-no-repeat"
                                 style={{
                                   borderLeftWidth: '4px',
-                                  borderLeftColor: subjectColor
+                                  borderLeftColor: subjectColor,
+                                  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")'
                                 }}
                               >
                                 {formData.subjects.map(s => (
@@ -630,7 +643,7 @@ const TimetableCreator = () => {
                               <select
                                 value={period.teacher}
                                 onChange={(e) => updatePeriod(dayIndex, periodIndex, 'teacher', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all duration-300 shadow-md font-semibold cursor-pointer appearance-none bg-[length:18px] bg-[position:right_0.5rem_center] bg-no-repeat" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")'}}
                               >
                                 <option value="">Select Teacher</option>
                                 {[...new Set(formData.subjects.map(s => s.teacher).filter(t => t))].map(teacher => (
@@ -644,7 +657,7 @@ const TimetableCreator = () => {
                               <select
                                 value={period.room}
                                 onChange={(e) => updatePeriod(dayIndex, periodIndex, 'room', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 dark:focus:border-orange-400 hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-lg transition-all duration-300 shadow-md font-semibold cursor-pointer appearance-none bg-[length:18px] bg-[position:right_0.5rem_center] bg-no-repeat" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")'}}
                               >
                                 <option value="">Select Room</option>
                                 {[...new Set(formData.subjects.map(s => s.room).filter(r => r))].map(room => (
