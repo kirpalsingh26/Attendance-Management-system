@@ -33,31 +33,46 @@ router.post('/', protect, async (req, res) => {
     console.log('Subjects:', JSON.stringify(subjects, null, 2));
     console.log('Schedule:', JSON.stringify(schedule, null, 2));
 
-    // Deactivate existing timetables
-    await Timetable.updateMany(
-      { user: req.user.id },
-      { isActive: false }
-    );
+    // Find existing active timetable
+    let timetable = await Timetable.findOne({ user: req.user.id, isActive: true });
 
-    // Create new timetable
-    const timetable = await Timetable.create({
-      user: req.user.id,
-      name,
-      semester,
-      academicYear,
-      schedule,
-      subjects,
-      isActive: true
-    });
-
-    console.log('Created timetable:', JSON.stringify(timetable, null, 2));
+    if (timetable) {
+      // Update existing timetable
+      console.log('Updating existing timetable:', timetable._id);
+      timetable = await Timetable.findByIdAndUpdate(
+        timetable._id,
+        {
+          name,
+          semester,
+          academicYear,
+          schedule,
+          subjects,
+          isActive: true
+        },
+        { new: true, runValidators: true }
+      );
+      console.log('Updated timetable:', JSON.stringify(timetable, null, 2));
+    } else {
+      // Create new timetable if none exists
+      console.log('Creating new timetable');
+      timetable = await Timetable.create({
+        user: req.user.id,
+        name,
+        semester,
+        academicYear,
+        schedule,
+        subjects,
+        isActive: true
+      });
+      console.log('Created timetable:', JSON.stringify(timetable, null, 2));
+    }
 
     res.status(201).json({
       success: true,
       timetable
     });
   } catch (error) {
-    console.error('Error creating timetable:', error);
+    console.error('Error creating/updating timetable:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -130,6 +145,29 @@ router.delete('/:id', protect, async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Timetable deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/timetable/cleanup/inactive
+// @desc    Delete all inactive timetables for user
+// @access  Private
+router.delete('/cleanup/inactive', protect, async (req, res) => {
+  try {
+    const result = await Timetable.deleteMany({ 
+      user: req.user.id, 
+      isActive: false 
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Deleted ${result.deletedCount} inactive timetable(s)`,
+      deletedCount: result.deletedCount
     });
   } catch (error) {
     res.status(500).json({
