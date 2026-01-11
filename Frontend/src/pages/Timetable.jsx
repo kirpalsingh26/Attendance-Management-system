@@ -12,33 +12,38 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 
 // Helper function to convert 24-hour time to 12-hour format
 const formatTime12Hour = (time24) => {
+  if (!time24) return '';
   const [hours, minutes] = time24.split(':');
-  const hour = parseInt(hours);
+  let hour = parseInt(hours, 10);
+  const min = minutes.padStart(2, '0');
   const period = hour >= 12 ? 'PM' : 'AM';
-  const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${hour12}:${minutes} ${period}`;
+  
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  
+  return `${hour}:${min} ${period}`;
 };
 
-// College class timings - 1 hour each for Lectures, 9:00 AM to 4:00 PM
-// Recess: 12:00 PM to 1:00 PM
+// College class timings - 1 hour each for Lectures, 8:30 AM to 4:30 PM
+// Recess: 11:30 AM to 12:30 PM
 const LECTURE_TIMINGS = [
-  { startTime: '09:00', endTime: '10:00' },
-  { startTime: '10:00', endTime: '11:00' },
-  { startTime: '11:00', endTime: '12:00' },
-  // RECESS: 12:00 - 13:00
-  { startTime: '13:00', endTime: '14:00' },
-  { startTime: '14:00', endTime: '15:00' },
-  { startTime: '15:00', endTime: '16:00' },
-  { startTime: '16:00', endTime: '17:00' }
+  { startTime: '08:30', endTime: '09:30' },
+  { startTime: '09:30', endTime: '10:30' },
+  { startTime: '10:30', endTime: '11:30' },
+  // RECESS: 11:30 - 12:30
+  { startTime: '12:30', endTime: '13:30' },
+  { startTime: '13:30', endTime: '14:30' },
+  { startTime: '14:30', endTime: '15:30' },
+  { startTime: '15:30', endTime: '16:30' }
 ];
 
 // Practical class timings - 2 hours each
 const PRACTICAL_TIMINGS = [
-  { startTime: '09:00', endTime: '11:00' },
-  { startTime: '11:00', endTime: '13:00' }, // Ends at recess
-  // RECESS: 12:00 - 13:00 (but practical continues if started at 11:00)
-  { startTime: '13:00', endTime: '15:00' },
-  { startTime: '15:00', endTime: '17:00' }
+  { startTime: '08:30', endTime: '10:30' },
+  { startTime: '10:30', endTime: '12:30' }, // Ends at recess
+  // RECESS: 11:30 - 12:30 (but practical continues if started at 10:30)
+  { startTime: '12:30', endTime: '14:30' },
+  { startTime: '14:30', endTime: '16:30' }
 ];
 
 const TimetableCreator = () => {
