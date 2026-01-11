@@ -15,7 +15,7 @@ connectDB().catch(err => {
 // Middleware - CORS must come first
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://attendance-management-system-nine-zeta.vercel.app/', // Replace with your actual Vercel URL
+  'https://ams-ardo5khh8-kirpalsingh26s-projects.vercel.app/', // Replace with your actual Vercel URL
   process.env.CLIENT_URL
 ].filter(Boolean);
 
