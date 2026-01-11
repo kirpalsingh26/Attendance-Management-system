@@ -7,8 +7,14 @@ const connectDB = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB only in development (not in production/serverless)
+// Connect to MongoDB - in serverless, this will be called from api/index.js
+// In development, call it here
 if (process.env.NODE_ENV !== 'production') {
+  connectDB().catch(err => {
+    console.error('Failed to connect to MongoDB:', err.message);
+  });
+} else {
+  // For production/serverless, initialize connection on cold start
   connectDB().catch(err => {
     console.error('Failed to connect to MongoDB:', err.message);
   });
