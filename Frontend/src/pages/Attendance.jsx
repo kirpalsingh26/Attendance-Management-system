@@ -97,6 +97,17 @@ const Attendance = () => {
   useEffect(() => {
     console.log('Looking for schedule on:', selectedDay);
     console.log('Found schedule:', todaySchedule);
+    
+    // Log first period timing specifically
+    if (todaySchedule && todaySchedule.periods.length > 0) {
+      const firstPeriod = todaySchedule.periods[0];
+      console.log('🔍 FIRST PERIOD DEBUG:');
+      console.log('  - Raw startTime:', firstPeriod.startTime);
+      console.log('  - Raw endTime:', firstPeriod.endTime);
+      console.log('  - Formatted startTime:', formatTime12Hour(firstPeriod.startTime));
+      console.log('  - Formatted endTime:', formatTime12Hour(firstPeriod.endTime));
+      console.log('  - Subject:', firstPeriod.subject);
+    }
   }, [selectedDay, todaySchedule]);
 
   const toggleAttendance = (subject, period) => {
