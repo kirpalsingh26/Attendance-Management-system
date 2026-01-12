@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Save, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Save, Calendar as CalendarIcon, FileUp, Edit3 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import TimetableUpload from '../components/TimetableUpload';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
@@ -68,6 +69,8 @@ const TimetableCreator = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showUploadSection, setShowUploadSection] = useState(false);
+  const [showManualEditor, setShowManualEditor] = useState(true);
 
   // Fetch timetable on component mount
   useEffect(() => {
@@ -204,6 +207,25 @@ const TimetableCreator = () => {
     }
   };
 
+  const handleUploadSuccess = (data) => {
+    console.log('Upload successful:', data);
+    setSuccess('Timetable uploaded and saved successfully! 🎉');
+    setShowUploadSection(false);
+    setShowManualEditor(true);
+    
+    // Refresh timetable data
+    fetchTimetable();
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => setSuccess(''), 5000);
+  };
+
+  const handleUploadError = (error) => {
+    console.error('Upload error:', error);
+    setError('Failed to upload timetable. Please check the format and try again.');
+    setTimeout(() => setError(''), 5000);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/20 dark:from-gray-950 dark:via-slate-900 dark:to-gray-900 relative overflow-hidden">
       {/* Animated background */}
@@ -254,6 +276,51 @@ const TimetableCreator = () => {
           </div>
         )}
 
+        {/* Creation Mode Selector */}
+        <div className="mb-8 flex gap-4 flex-wrap">
+          <Button
+            onClick={() => {
+              setShowManualEditor(true);
+              setShowUploadSection(false);
+            }}
+            className={`flex items-center gap-2 ${
+              showManualEditor && !showUploadSection
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <Edit3 className="w-4 h-4" />
+            Manual Editor
+          </Button>
+          <Button
+            onClick={() => {
+              setShowUploadSection(true);
+              setShowManualEditor(false);
+            }}
+            className={`flex items-center gap-2 ${
+              showUploadSection
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <FileUp className="w-4 h-4" />
+            Upload JSON
+          </Button>
+        </div>
+
+        {/* Upload Section */}
+        {showUploadSection && (
+          <div className="mb-10 animate-fade-in">
+            <TimetableUpload 
+              onUploadSuccess={handleUploadSuccess}
+              onUploadError={handleUploadError}
+            />
+          </div>
+        )}
+
+        {/* Manual Editor Section */}
+        {showManualEditor && !showUploadSection && (
+          <>
         {/* Add Subject */}
         <div className="relative mb-10 group">
           {/* Animated glow effect */}
@@ -728,6 +795,8 @@ const TimetableCreator = () => {
             {loading ? 'Saving...' : 'Save Timetable'}
           </Button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

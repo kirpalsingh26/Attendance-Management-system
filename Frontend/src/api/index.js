@@ -51,7 +51,9 @@ export const timetableAPI = {
   get: () => API.get('/timetable'),
   create: (data) => API.post('/timetable', data),
   update: (id, data) => API.put(`/timetable/${id}`, data),
-  delete: (id) => API.delete(`/timetable/${id}`)
+  delete: (id) => API.delete(`/timetable/${id}`),
+  upload: (data) => API.post('/timetable/upload', data),
+  getTemplate: () => API.get('/timetable/template')
 };
 
 // Attendance endpoints

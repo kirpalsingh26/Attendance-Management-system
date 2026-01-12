@@ -87,6 +87,23 @@ const timetableSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  uploadMethod: {
+    type: String,
+    enum: ['manual', 'json'],
+    default: 'manual'
+  },
+  metadata: {
+    lastUploadDate: {
+      type: Date
+    },
+    fileName: {
+      type: String
+    },
+    version: {
+      type: Number,
+      default: 1
+    }
   }
 }, {
   timestamps: true
