@@ -1,5 +1,7 @@
-// Load .env file (Vercel will override with environment variables)
-require('dotenv').config();
+// Only load .env in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const express = require('express');
 const cors = require('cors');
