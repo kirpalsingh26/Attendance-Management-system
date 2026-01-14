@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, CheckSquare, BarChart3, TrendingUp, Plus } from 'lucide-react';
 import { useData } from '../context/DataContext';
@@ -7,6 +7,7 @@ import Card from '../components/Card';
 
 const Dashboard = () => {
   const { timetable, stats, fetchTimetable, fetchStats } = useData();
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'Lecture', 'Practical'
 
   useEffect(() => {
     fetchTimetable();
@@ -72,13 +73,60 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* Subject Filter Buttons */}
+        {stats?.subjects && stats.subjects.length > 0 && (
+          <div className="mb-6 flex justify-center">
+            <div className="inline-flex bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-2 rounded-2xl shadow-xl border-2 border-slate-200/50 dark:border-slate-700/50 gap-2">
+              <button
+                onClick={() => setTypeFilter('all')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
+                  typeFilter === 'all'
+                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl scale-105'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
+                }`}
+              >
+                All Subjects
+              </button>
+              <button
+                onClick={() => setTypeFilter('Lecture')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
+                  typeFilter === 'Lecture'
+                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-xl scale-105'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
+                }`}
+              >
+                Lectures
+              </button>
+              <button
+                onClick={() => setTypeFilter('Practical')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
+                  typeFilter === 'Practical'
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xl scale-105'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
+                }`}
+              >
+                Practicals
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Subject-wise Attendance */}
         {stats?.subjects && stats.subjects.length > 0 ? (
           <Card title="Subject-wise Attendance" className="mb-8">
             <div className="space-y-4">
-              {stats.subjects.map((subject) => (
-                <SubjectProgress key={subject.subject} data={subject} />
-              ))}
+              {stats.subjects
+                .filter((subject) => {
+                  if (typeFilter === 'all') return true;
+                  // Get subject details from timetable to check type
+                  const timetableSubject = timetable?.subjects?.find(
+                    (s) => s.name === subject.subject
+                  );
+                  return timetableSubject?.type === typeFilter;
+                })
+                .map((subject) => (
+                  <SubjectProgress key={subject.subject} data={subject} />
+                ))}
             </div>
           </Card>
         ) : (

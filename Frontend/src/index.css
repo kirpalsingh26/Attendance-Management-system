@@ -231,6 +231,11 @@ button:hover, a:hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Recharts legend text color */
+.recharts-legend-item-text {
+  color: white !important;
+}
+
 /* Responsive text sizing */
 @media (max-width: 640px) {
   html {

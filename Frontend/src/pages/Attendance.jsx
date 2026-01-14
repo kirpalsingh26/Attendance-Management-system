@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { Check, X, Calendar as CalendarIcon, Clock, User, MapPin, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Check, X, Calendar as CalendarIcon, Clock, User, MapPin, ChevronLeft, ChevronRight, RefreshCw, Umbrella } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
@@ -15,6 +15,7 @@ const Attendance = () => {
   const [success, setSuccess] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'Lecture', 'Practical'
+  const [isHoliday, setIsHoliday] = useState(false);
 
   const selectedDay = format(selectedDate, 'EEEE');
 
@@ -122,8 +123,38 @@ const Attendance = () => {
     }
   };
 
+  const handleHolidayToggle = () => {
+    setIsHoliday(!isHoliday);
+    if (!isHoliday) {
+      // When marking as holiday, clear all attendance
+      setAttendance({});
+    }
+  };
+
   const handleSave = async () => {
     if (!todaySchedule || todaySchedule.periods.length === 0) {
+      return;
+    }
+
+    // If it's a holiday, mark all as absent or skip saving
+    if (isHoliday) {
+      const records = [{
+        subject: 'Holiday',
+        status: 'holiday',
+        period: 'All Day',
+        notes: 'College Holiday - No Classes'
+      }];
+
+      const result = await markAttendance({
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        day: selectedDay,
+        records
+      });
+
+      if (result.success) {
+        setSuccess('Holiday marked successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      }
       return;
     }
 
@@ -377,6 +408,7 @@ const Attendance = () => {
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Filter by Type</h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     {(() => {
+                      if (isHoliday) return 'Holiday - No classes scheduled';
                       const filteredCount = todaySchedule.periods.filter((period) => {
                         if (typeFilter === 'all') return true;
                         const subject = timetable.subjects.find(s => s.name === period.subject);
@@ -386,11 +418,23 @@ const Attendance = () => {
                     })()}
                   </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   <button
-                    onClick={() => setTypeFilter('all')}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
-                      typeFilter === 'all'
+                    onClick={handleHolidayToggle}
+                    className={`group flex items-center space-x-2 px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg ${
+                      isHoliday
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-500/30 scale-105 ring-2 ring-amber-500/20'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 dark:hover:text-amber-400 hover:shadow-xl hover:ring-2 hover:ring-amber-500/20'
+                    }`}
+                  >
+                    <Umbrella className={`w-5 h-5 transition-transform ${isHoliday ? 'scale-110' : 'group-hover:scale-110'}`} />
+                    <span>{isHoliday ? 'Holiday' : 'Mark Holiday'}</span>
+                  </button>
+                  <button
+                    onClick={() => { setTypeFilter('all'); setIsHoliday(false); }}
+                    disabled={isHoliday}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                      typeFilter === 'all' && !isHoliday
                         ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl scale-105'
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
                     }`}
@@ -398,9 +442,10 @@ const Attendance = () => {
                     All Classes
                   </button>
                   <button
-                    onClick={() => setTypeFilter('Lecture')}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
-                      typeFilter === 'Lecture'
+                    onClick={() => { setTypeFilter('Lecture'); setIsHoliday(false); }}
+                    disabled={isHoliday}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                      typeFilter === 'Lecture' && !isHoliday
                         ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-xl scale-105'
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
                     }`}
@@ -408,9 +453,10 @@ const Attendance = () => {
                     Lectures
                   </button>
                   <button
-                    onClick={() => setTypeFilter('Practical')}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
-                      typeFilter === 'Practical'
+                    onClick={() => { setTypeFilter('Practical'); setIsHoliday(false); }}
+                    disabled={isHoliday}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                      typeFilter === 'Practical' && !isHoliday
                         ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xl scale-105'
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
                     }`}
@@ -422,6 +468,26 @@ const Attendance = () => {
             </Card>
 
             {(() => {
+              if (isHoliday) {
+                return (
+                  <Card className="text-center py-16 hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-200 dark:border-amber-800">
+                    <div className="relative inline-block mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full blur-2xl opacity-30"></div>
+                      <Umbrella className="w-20 h-20 text-amber-600 dark:text-amber-400 mx-auto relative animate-pulse" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-amber-900 dark:text-amber-200 mb-3">
+                      Holiday Marked
+                    </h3>
+                    <p className="text-amber-700 dark:text-amber-300 mb-6 text-lg">
+                      College is off on {format(selectedDate, 'MMMM d, yyyy')} ({selectedDay})
+                    </p>
+                    <p className="text-amber-600 dark:text-amber-400 text-sm">
+                      Click "Save Attendance" to record this holiday
+                    </p>
+                  </Card>
+                );
+              }
+
               const filteredPeriods = todaySchedule.periods.filter((period) => {
                 if (typeFilter === 'all') return true;
                 const subject = timetable.subjects.find(s => s.name === period.subject);

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, X, Target, Award, Zap } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { BarChart, Bar, LineChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
+import { TrendingUp, TrendingDown, Calendar, X, Target, Award, Zap, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { attendanceAPI } from '../api';
 import Navbar from '../components/Navbar';
@@ -11,11 +11,22 @@ const Analytics = () => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [detailedStats, setDetailedStats] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     fetchStats();
     fetchAttendance();
   }, []);
+
+  // Scroll to modal when it opens
+  useEffect(() => {
+    if (selectedSubject && detailedStats && modalRef.current) {
+      // Small delay to ensure modal is rendered
+      setTimeout(() => {
+        modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [selectedSubject, detailedStats]);
 
   const fetchDetailedStats = async (subject) => {
     setLoadingDetails(true);
@@ -64,20 +75,28 @@ const Analytics = () => {
         <div className="absolute w-[500px] h-[500px] bottom-1/4 -left-48 bg-gradient-to-br from-purple-400/5 to-pink-400/5 dark:from-purple-500/3 dark:to-pink-500/3 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
         <div className="absolute w-[300px] h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-indigo-400/3 to-violet-400/3 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
-      
+
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 relative z-10">
-        <div className="mb-10 animate-fade-in">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-1.5 h-12 bg-gradient-to-b from-blue-600 via-indigo-600 to-purple-600 rounded-full shadow-lg"></div>
-            <h1 className="text-5xl sm:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-200 bg-clip-text text-transparent leading-tight tracking-tight">
-              Analytics
-            </h1>
+        <div className="mb-12 animate-fade-in">
+          <div className="flex items-center space-x-5 mb-5">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-b from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-xl opacity-60 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-4 rounded-2xl shadow-2xl">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-5xl sm:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 dark:from-white dark:via-blue-100 dark:to-purple-200 bg-clip-text text-transparent leading-tight tracking-tight">
+                Analytics Dashboard
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed font-medium mt-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Live performance insights and trends
+              </p>
+            </div>
           </div>
-          <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed ml-[26px] font-medium">
-            Comprehensive insights into your attendance performance
-          </p>
         </div>
 
         {/* 75% Requirement Banner */}
@@ -102,57 +121,101 @@ const Analytics = () => {
         </div>
 
         {/* Overall Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          <Card className="hover:-translate-y-2 transition-all duration-300 cursor-pointer group border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-xl hover:shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center uppercase tracking-wider">
-                  Overall Attendance
-                  <span className="ml-2 w-2 h-2 bg-current rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                </p>
-                <p className="text-6xl font-black text-slate-900 dark:text-white transition-transform duration-300 group-hover:scale-110">
-                  {stats?.overall?.percentage || 0}%
-                </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <Card className="relative overflow-hidden hover:-translate-y-3 transition-all duration-500 cursor-pointer group border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-2xl hover:shadow-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-3 flex items-center uppercase tracking-wider">
+                    Overall Attendance
+                    <span className="ml-2 w-2 h-2 bg-current rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"></span>
+                  </p>
+                  <p className="text-7xl font-black bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 dark:from-white dark:via-blue-100 dark:to-purple-200 bg-clip-text text-transparent transition-transform duration-300 group-hover:scale-110">
+                    {stats?.overall?.percentage || 0}%
+                  </p>
+                </div>
+                <div className="relative">
+                  <div className={'absolute inset-0 ' + (isGood ? 'bg-green-400' : 'bg-red-400') + ' rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity'}></div>
+                  {isGood ? (
+                    <TrendingUp className="relative w-16 h-16 text-green-500 transition-all duration-300 group-hover:scale-125 group-hover:rotate-12" />
+                  ) : (
+                    <TrendingDown className="relative w-16 h-16 text-red-500 transition-all duration-300 group-hover:scale-125 group-hover:rotate-12" />
+                  )}
+                </div>
               </div>
-              {isGood ? (
-                <TrendingUp className="w-14 h-14 text-green-500 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6" />
-              ) : (
-                <TrendingDown className="w-14 h-14 text-red-500 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6" />
-              )}
-            </div>
-            <div className="mt-5 flex items-center space-x-2">
-              <div className={`px-4 py-2 rounded-xl text-sm font-bold border ${
-                isGood ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-              }`}>
-                {isGood ? 'Good Standing' : 'Needs Improvement'}
+              <div className="mt-6 flex items-center space-x-2">
+                <div className={isGood ? 'px-5 py-2.5 rounded-xl text-sm font-bold border-2 shadow-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200 dark:bg-gradient-to-r dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-400 dark:border-green-700' : 'px-5 py-2.5 rounded-xl text-sm font-bold border-2 shadow-lg bg-gradient-to-r from-red-100 to-rose-100 text-red-800 border-red-200 dark:bg-gradient-to-r dark:from-red-900/30 dark:to-rose-900/30 dark:text-red-400 dark:border-red-700'}>
+                  {isGood ? '✓ Good Standing' : '⚠ Needs Improvement'}
+                </div>
               </div>
             </div>
           </Card>
 
-          <Card className="hover:-translate-y-2 transition-all duration-300 cursor-pointer group border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-xl hover:shadow-2xl">
-            <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center uppercase tracking-wider">
-              Total Classes Attended
-              <span className="ml-2 w-2 h-2 bg-current rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-            </p>
-            <p className="text-6xl font-black text-slate-900 dark:text-white transition-transform duration-300 group-hover:scale-110">
-              {stats?.overall?.present || 0}
-            </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 font-semibold">
-              Out of {stats?.overall?.total || 0} classes
-            </p>
+          <Card className="relative overflow-hidden hover:-translate-y-3 transition-all duration-500 cursor-pointer group border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-2xl hover:shadow-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/30 dark:from-green-900/10 dark:to-emerald-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-slate-600 dark:text-slate-400 flex items-center uppercase tracking-wider">
+                  Total Classes Attended
+                  <span className="ml-2 w-2 h-2 bg-current rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"></span>
+                </p>
+                <CheckCircle2 className="w-8 h-8 text-green-500 opacity-20 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12" />
+              </div>
+              <p className="text-7xl font-black bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent transition-transform duration-300 group-hover:scale-110">
+                {stats?.overall?.present || 0}
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-1000" 
+                    style={{ 
+                      width: stats?.overall?.present && stats?.overall?.total 
+                        ? Math.round((stats.overall.present / stats.overall.total) * 100) + '%' 
+                        : '0%' 
+                    }}
+                  ></div>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 font-semibold">
+                Out of <span className="text-slate-900 dark:text-white font-bold">{stats?.overall?.total || 0}</span> classes
+              </p>
+            </div>
           </Card>
 
-          <Card className="hover:-translate-y-2 transition-all duration-300 cursor-pointer group border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-xl hover:shadow-2xl">
-            <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center uppercase tracking-wider">
-              Classes Missed
-              <span className="ml-2 w-2 h-2 bg-current rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-            </p>
-            <p className="text-6xl font-black text-red-600 dark:text-red-400 transition-transform duration-300 group-hover:scale-110">
-              {stats?.overall?.absent || 0}
-            </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 font-semibold">
-              Total absences
-            </p>
+          <Card className="relative overflow-hidden hover:-translate-y-3 transition-all duration-500 cursor-pointer group border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-2xl hover:shadow-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-50/50 to-rose-50/30 dark:from-red-900/10 dark:to-rose-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-slate-600 dark:text-slate-400 flex items-center uppercase tracking-wider">
+                  Classes Missed
+                  <span className="ml-2 w-2 h-2 bg-current rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"></span>
+                </p>
+                <AlertCircle className="w-8 h-8 text-red-500 opacity-20 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12" />
+              </div>
+              <p className="text-7xl font-black bg-gradient-to-br from-red-600 via-rose-600 to-pink-600 dark:from-red-400 dark:via-rose-400 dark:to-pink-400 bg-clip-text text-transparent transition-transform duration-300 group-hover:scale-110">
+                {stats?.overall?.absent || 0}
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-red-500 to-rose-500 rounded-full transition-all duration-1000" 
+                    style={{ 
+                      width: stats?.overall?.absent && stats?.overall?.total 
+                        ? Math.round((stats.overall.absent / stats.overall.total) * 100) + '%' 
+                        : '0%' 
+                    }}
+                  ></div>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 font-semibold">
+                <span className="text-red-600 dark:text-red-400 font-bold">
+                  {stats?.overall?.absent && stats?.overall?.total 
+                    ? Math.round((stats.overall.absent / stats.overall.total) * 100) 
+                    : 0}%
+                </span> absence rate
+              </p>
+            </div>
           </Card>
         </div>
 
@@ -160,29 +223,202 @@ const Analytics = () => {
         {subjectData.length > 0 ? (
           <>
             {/* Subject-wise Bar Chart */}
-            <Card title="Subject-wise Attendance (%)" subtitle="Compare attendance across all subjects" className="mb-10 hover:shadow-2xl transition-all duration-300 border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
-              <div className="p-8 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/30 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 rounded-2xl border border-slate-200/50 dark:border-slate-700/30 shadow-inner">
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={subjectData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="name" stroke="#6b7280" />
-                    <YAxis domain={[0, 100]} stroke="#6b7280" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="attendance" fill="url(#colorGradient)" name="Attendance %" radius={[8, 8, 0, 0]} />
+            <Card className="mb-12 hover:shadow-3xl transition-all duration-500 border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm group">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Subject-wise Attendance</h3>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium ml-12">Compare performance across all subjects</p>
+                </div>
+              </div>
+              <div className="p-8 bg-gradient-to-br from-blue-50/70 via-indigo-50/50 to-purple-50/50 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-purple-950/20 rounded-2xl border-2 border-blue-200/50 dark:border-blue-800/50 shadow-inner backdrop-blur-sm">
+                <ResponsiveContainer width="100%" height={450}>
+                  <BarChart data={subjectData} margin={{ top: 25, right: 35, left: 5, bottom: 25 }}>
                     <defs>
                       <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3B82F6" />
-                        <stop offset="100%" stopColor="#8B5CF6" />
+                        <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+                        <stop offset="40%" stopColor="#6366F1" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.85} />
                       </linearGradient>
+                      <filter id="shadow">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
+                        <feOffset dx="0" dy="5" result="offsetblur" />
+                        <feComponentTransfer>
+                          <feFuncA type="linear" slope="0.4" />
+                        </feComponentTransfer>
+                        <feMerge>
+                          <feMergeNode />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
                     </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.3} vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#475569" 
+                      tick={{ fill: '#475569', fontSize: 13, fontWeight: 700 }}
+                      tickLine={{ stroke: '#94a3b8', strokeWidth: 2 }}
+                      axisLine={{ stroke: '#cbd5e1', strokeWidth: 3 }}
+                    />
+                    <YAxis 
+                      domain={[0, 100]} 
+                      stroke="#475569"
+                      tick={{ fill: '#475569', fontSize: 13, fontWeight: 700 }}
+                      tickLine={{ stroke: '#94a3b8', strokeWidth: 2 }}
+                      axisLine={{ stroke: '#cbd5e1', strokeWidth: 3 }}
+                      label={{ value: 'Attendance %', angle: -90, position: 'insideLeft', style: { fill: '#1e293b', fontWeight: 800, fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.99)',
+                        border: '3px solid #818cf8',
+                        borderRadius: '20px',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        padding: '16px 20px',
+                        fontWeight: 700
+                      }}
+                      cursor={{ fill: 'rgba(99, 102, 241, 0.15)', radius: 10 }}
+                      labelStyle={{ color: '#0f172a', fontWeight: 800, fontSize: 15, marginBottom: '10px' }}
+                      itemStyle={{ color: '#6366f1', fontSize: 14 }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '25px', fontWeight: 700, fontSize: 14 }}
+                      iconType="circle"
+                      iconSize={16}
+                    />
+                    <ReferenceLine 
+                      y={75} 
+                      stroke="#f59e0b" 
+                      strokeWidth={4} 
+                      strokeDasharray="10 5"
+                      label={{ 
+                        value: '75% Required', 
+                        position: 'insideTopRight', 
+                        fill: '#ea580c', 
+                        fontWeight: 800,
+                        fontSize: 14,
+                        style: { textShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+                      }}
+                      filter="url(#glow)"
+                    />
+                    <Bar 
+                      dataKey="attendance" 
+                      fill="url(#colorGradient)" 
+                      name="Attendance %" 
+                      radius={[12, 12, 0, 0]}
+                      filter="url(#shadow)"
+                      maxBarSize={70}
+                      animationDuration={1000}
+                      animationBegin={0}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            {/* Subject-wise Combined Chart */}
+            <Card className="mb-12 hover:shadow-3xl transition-all duration-500 border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm group">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Subject-wise Attendance Overview</h3>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium ml-12">Compare present and absent classes across all subjects</p>
+                </div>
+              </div>
+              <div className="p-8 bg-gradient-to-br from-indigo-50/70 via-purple-50/50 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/20 rounded-2xl border-2 border-purple-200/50 dark:border-purple-800/50 shadow-inner backdrop-blur-sm">
+                <ResponsiveContainer width="100%" height={450}>
+                  <BarChart data={subjectData} margin={{ top: 25, right: 35, left: 5, bottom: 25 }} barGap={8}>
+                    <defs>
+                      <linearGradient id="presentGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
+                        <stop offset="50%" stopColor="#059669" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="#047857" stopOpacity={0.9} />
+                      </linearGradient>
+                      <linearGradient id="absentGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#EF4444" stopOpacity={1} />
+                        <stop offset="50%" stopColor="#DC2626" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="#B91C1C" stopOpacity={0.9} />
+                      </linearGradient>
+                      <filter id="barShadow">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
+                        <feOffset dx="0" dy="5" result="offsetblur" />
+                        <feComponentTransfer>
+                          <feFuncA type="linear" slope="0.4" />
+                        </feComponentTransfer>
+                        <feMerge>
+                          <feMergeNode />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.3} vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#475569" 
+                      tick={{ fill: '#475569', fontSize: 13, fontWeight: 700 }}
+                      tickLine={{ stroke: '#94a3b8', strokeWidth: 2 }}
+                      axisLine={{ stroke: '#cbd5e1', strokeWidth: 3 }}
+                    />
+                    <YAxis 
+                      stroke="#475569"
+                      tick={{ fill: '#475569', fontSize: 13, fontWeight: 700 }}
+                      tickLine={{ stroke: '#94a3b8', strokeWidth: 2 }}
+                      axisLine={{ stroke: '#cbd5e1', strokeWidth: 3 }}
+                      label={{ value: 'Number of Classes', angle: -90, position: 'insideLeft', style: { fill: '#1e293b', fontWeight: 800, fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.99)',
+                        border: '3px solid #a78bfa',
+                        borderRadius: '20px',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        padding: '16px 20px',
+                        fontWeight: 700
+                      }}
+                      cursor={{ fill: 'rgba(139, 92, 246, 0.15)', radius: 10 }}
+                      labelStyle={{ color: '#0f172a', fontWeight: 800, fontSize: 15, marginBottom: '10px' }}
+                      itemStyle={{ fontSize: 14 }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '25px', fontWeight: 700, fontSize: 14 }}
+                      iconType="circle"
+                      iconSize={16}
+                    />
+                    <Bar 
+                      dataKey="present" 
+                      fill="url(#presentGradient)" 
+                      name="Classes Attended" 
+                      radius={[12, 12, 0, 0]}
+                      filter="url(#barShadow)"
+                      maxBarSize={50}
+                      animationDuration={1000}
+                      animationBegin={0}
+                    />
+                    <Bar 
+                      dataKey="absent" 
+                      fill="url(#absentGradient)" 
+                      name="Classes Missed" 
+                      radius={[12, 12, 0, 0]}
+                      filter="url(#barShadow)"
+                      maxBarSize={50}
+                      animationDuration={1000}
+                      animationBegin={200}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -190,30 +426,121 @@ const Analytics = () => {
 
             {/* Attendance Trend Line Chart */}
             {trendData.length > 0 && (
-              <Card title="Attendance Trend (Last 30 Days)" subtitle="Track your daily attendance performance" className="mb-10 hover:shadow-2xl transition-all duration-300 border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
-                <div className="p-8 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-cyan-50/30 dark:from-emerald-900/10 dark:via-teal-900/10 dark:to-cyan-900/10 rounded-2xl border border-slate-200/50 dark:border-slate-700/30 shadow-inner">
-                  <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="date" stroke="#6b7280" />
-                      <YAxis domain={[0, 100]} stroke="#6b7280" />
+              <Card className="mb-12 hover:shadow-3xl transition-all duration-500 border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm group">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg">
+                        <TrendingUp className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Attendance Trend</h3>
+                      <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-600 dark:text-slate-400">Last 30 Days</span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm font-medium ml-12">Track your daily performance over time</p>
+                  </div>
+                </div>
+                <div className="p-8 bg-gradient-to-br from-emerald-50/70 via-teal-50/50 to-cyan-50/50 dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-cyan-950/20 rounded-2xl border-2 border-emerald-200/50 dark:border-emerald-800/50 shadow-inner backdrop-blur-sm">
+                  <ResponsiveContainer width="100%" height={450}>
+                    <LineChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+                      <defs>
+                        <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
+                          <stop offset="50%" stopColor="#14B8A6" stopOpacity={0.95} />
+                          <stop offset="100%" stopColor="#06B6D4" stopOpacity={0.9} />
+                        </linearGradient>
+                        <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10B981" stopOpacity={0.4} />
+                          <stop offset="50%" stopColor="#14B8A6" stopOpacity={0.25} />
+                          <stop offset="100%" stopColor="#06B6D4" stopOpacity={0.1} />
+                        </linearGradient>
+                        <filter id="lineShadow">
+                          <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+                          <feOffset dx="0" dy="3" result="offsetblur" />
+                          <feComponentTransfer>
+                            <feFuncA type="linear" slope="0.5" />
+                          </feComponentTransfer>
+                          <feMerge>
+                            <feMergeNode />
+                            <feMergeNode in="SourceGraphic" />
+                          </feMerge>
+                        </filter>
+                        <filter id="dotGlow">
+                          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                          <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                          </feMerge>
+                        </filter>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.3} vertical={false} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#475569"
+                        tick={{ fill: '#475569', fontSize: 11, fontWeight: 700 }}
+                        angle={-35}
+                        textAnchor="end"
+                        height={75}
+                        tickLine={{ stroke: '#94a3b8', strokeWidth: 2 }}
+                        axisLine={{ stroke: '#cbd5e1', strokeWidth: 3 }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        stroke="#475569"
+                        tick={{ fill: '#475569', fontSize: 13, fontWeight: 700 }}
+                        tickLine={{ stroke: '#94a3b8', strokeWidth: 2 }}
+                        axisLine={{ stroke: '#cbd5e1', strokeWidth: 3 }}
+                        label={{ value: 'Attendance %', angle: -90, position: 'insideLeft', style: { fill: '#1e293b', fontWeight: 800, fontSize: 14 } }}
+                      />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          backgroundColor: 'rgba(255, 255, 255, 0.99)',
+                          border: '3px solid #6ee7b7',
+                          borderRadius: '20px',
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                          padding: '16px 20px',
+                          fontWeight: 700
+                        }}
+                        cursor={{ stroke: '#10B981', strokeWidth: 3, strokeDasharray: '5 5' }}
+                        labelStyle={{ color: '#0f172a', fontWeight: 800, fontSize: 15, marginBottom: '10px' }}
+                        itemStyle={{ color: '#059669', fontSize: 14 }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '25px', fontWeight: 700, fontSize: 14 }}
+                        iconType="circle"
+                        iconSize={16}
+                      />
+                      <ReferenceLine 
+                        y={75} 
+                        stroke="#f59e0b" 
+                        strokeWidth={4} 
+                        strokeDasharray="10 5"
+                        label={{ 
+                          value: '75% Target', 
+                          position: 'insideTopRight', 
+                          fill: '#ea580c', 
+                          fontWeight: 800,
+                          fontSize: 14,
+                          style: { textShadow: '0 2px 4px rgba(0,0,0,0.1)' }
                         }}
                       />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="percentage" 
-                        stroke="#10B981" 
-                        strokeWidth={3}
-                        dot={{ fill: '#10B981', r: 5 }}
-                        activeDot={{ r: 7 }}
+                      <Area
+                        type="monotone"
+                        dataKey="percentage"
+                        stroke="none"
+                        fill="url(#areaGradient)"
+                        animationDuration={1500}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="percentage"
+                        stroke="url(#lineGradient)"
+                        strokeWidth={5}
+                        dot={{ fill: '#10B981', r: 7, strokeWidth: 3, stroke: '#fff', filter: 'url(#dotGlow)' }}
+                        activeDot={{ r: 10, strokeWidth: 4, fill: '#059669', stroke: '#fff', filter: 'url(#dotGlow)' }}
                         name="Daily Attendance %"
+                        filter="url(#lineShadow)"
+                        animationDuration={1500}
+                        animationBegin={0}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -222,7 +549,18 @@ const Analytics = () => {
             )}
 
             {/* Subject Details Table */}
-            <Card title="Detailed Subject Statistics" subtitle="Complete breakdown of your attendance" className="border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
+            <Card className="border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm hover:shadow-3xl transition-all duration-500">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-lg">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Detailed Subject Statistics</h3>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium ml-12">Complete breakdown of your attendance record</p>
+                </div>
+              </div>
               <div className="overflow-x-auto rounded-2xl">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900">
@@ -244,12 +582,15 @@ const Analytics = () => {
                       const statusBg = percentage >= 75 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30';
                       const classesNeeded = percentage < 75 ? Math.ceil((75 * subject.total - 100 * subject.present) / (100 - 75)) : 0;
                       const rowBg = percentage < 75 ? 'bg-red-50/50 dark:bg-red-900/10' : '';
+                      const borderClass = percentage < 75 ? 'border-l-4 border-l-red-500' : '';
+                      const stripingClass = idx % 2 === 0 && percentage >= 75 ? 'bg-white dark:bg-gray-800' : percentage >= 75 ? 'bg-gray-50/50 dark:bg-gray-800/30' : '';
+                      const rowClassName = 'border-b dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer group ' + rowBg + ' ' + borderClass + ' ' + stripingClass;
 
                       return (
-                        <tr 
-                          key={subject.subject} 
+                        <tr
+                          key={subject.subject}
                           onClick={() => fetchDetailedStats(subject.subject)}
-                          className={`border-b dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer group ${rowBg} ${percentage < 75 ? 'border-l-4 border-l-red-500' : ''} ${idx % 2 === 0 && percentage >= 75 ? 'bg-white dark:bg-gray-800' : percentage >= 75 ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}`}
+                          className={rowClassName}
                         >
                           <td className="py-4 px-6 font-semibold text-gray-900 dark:text-white">
                             <div className="flex items-center">
@@ -275,7 +616,7 @@ const Analytics = () => {
                             <span className="text-xl font-bold text-gray-900 dark:text-white">{subject.percentage}%</span>
                           </td>
                           <td className="text-center py-4 px-6">
-                            <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold ${statusBg} ${statusColor}`}>
+                            <span className={'inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold ' + statusBg + ' ' + statusColor}>
                               {status}
                             </span>
                           </td>
@@ -311,10 +652,11 @@ const Analytics = () => {
 
       {/* Detailed Analytics Modal */}
       {selectedSubject && detailedStats && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="min-h-screen flex items-center justify-center py-8 px-4">
+            <div ref={modalRef} className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-6xl w-full max-h-[85vh] overflow-y-auto animate-scale-in">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 rounded-t-3xl flex justify-between items-center">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 rounded-t-3xl flex justify-between items-center z-50 shadow-xl">
               <div>
                 <h2 className="text-3xl font-bold text-white mb-1">{selectedSubject}</h2>
                 <p className="text-blue-100">Detailed Analytics & Insights</p>
@@ -380,34 +722,93 @@ const Analytics = () => {
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">Classes Needed to Reach Target</h3>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    { label: '75%', value: detailedStats.targets.for75, color: 'yellow' },
-                    { label: '80%', value: detailedStats.targets.for80, color: 'green' },
-                    { label: '85%', value: detailedStats.targets.for85, color: 'blue' },
-                    { label: '90%', value: detailedStats.targets.for90, color: 'purple' }
-                  ].map(target => (
-                    <div key={target.label} className={`bg-${target.color}-100 dark:bg-${target.color}-900/30 p-4 rounded-xl border border-${target.color}-200 dark:border-${target.color}-700`}>
-                      <p className={`text-sm font-semibold text-${target.color}-700 dark:text-${target.color}-300 mb-1`}>{target.label}</p>
-                      <p className={`text-2xl font-bold text-${target.color}-900 dark:text-${target.color}-100`}>
-                        {target.value === 0 ? '✓ Achieved' : `${target.value} classes`}
-                      </p>
-                    </div>
-                  ))}
+                  <div className="bg-yellow-100 dark:bg-yellow-900/30 p-4 rounded-xl border border-yellow-200 dark:border-yellow-700">
+                    <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">75%</p>
+                    <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                      {detailedStats.targets.for75 === 0 ? '✓ Achieved' : detailedStats.targets.for75 + ' classes'}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-xl border border-green-200 dark:border-green-700">
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">80%</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                      {detailedStats.targets.for80 === 0 ? '✓ Achieved' : detailedStats.targets.for80 + ' classes'}
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-200 dark:border-blue-700">
+                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">85%</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {detailedStats.targets.for85 === 0 ? '✓ Achieved' : detailedStats.targets.for85 + ' classes'}
+                    </p>
+                  </div>
+                  <div className="bg-purple-100 dark:bg-purple-900/30 p-4 rounded-xl border border-purple-200 dark:border-purple-700">
+                    <p className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">90%</p>
+                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                      {detailedStats.targets.for90 === 0 ? '✓ Achieved' : detailedStats.targets.for90 + ' classes'}
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {/* Monthly Trend */}
               {detailedStats.monthlyTrend.length > 0 && (
-                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Monthly Trend</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={detailedStats.monthlyTrend}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="percentage" stroke="#8B5CF6" strokeWidth={3} name="Attendance %" />
+                <div className="bg-gradient-to-br from-purple-50/80 to-indigo-50/80 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-2xl border border-purple-200/50 dark:border-purple-700/30 shadow-lg">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" />
+                    Monthly Trend
+                  </h3>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <LineChart data={detailedStats.monthlyTrend} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+                      <defs>
+                        <linearGradient id="modalLineGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.4} />
+                          <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="5 5" stroke="#e5e7eb" strokeOpacity={0.5} vertical={false} />
+                      <XAxis 
+                        dataKey="month" 
+                        stroke="#6b7280"
+                        tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: '#9ca3af' }}
+                        axisLine={{ stroke: '#d1d5db', strokeWidth: 2 }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        stroke="#6b7280"
+                        tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: '#9ca3af' }}
+                        axisLine={{ stroke: '#d1d5db', strokeWidth: 2 }}
+                        label={{ value: 'Attendance %', angle: -90, position: 'insideLeft', style: { fill: '#6b7280', fontWeight: 700 } }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                          border: '2px solid #c4b5fd',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                          padding: '12px'
+                        }}
+                        labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                        itemStyle={{ color: '#8B5CF6', fontWeight: 600 }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '16px', fontWeight: 600 }} />
+                      <ReferenceLine 
+                        y={75} 
+                        stroke="#ef4444" 
+                        strokeWidth={2.5} 
+                        strokeDasharray="6 4"
+                        label={{ value: '75% Target', position: 'right', fill: '#ef4444', fontWeight: 700, fontSize: 12 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="percentage" 
+                        stroke="#8B5CF6" 
+                        strokeWidth={4} 
+                        name="Attendance %"
+                        dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 6 }}
+                        activeDot={{ r: 8, strokeWidth: 0, fill: '#7C3AED' }}
+                        fill="url(#modalLineGradient)"
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -415,16 +816,66 @@ const Analytics = () => {
 
               {/* Weekly Pattern */}
               {detailedStats.weeklyPattern.length > 0 && (
-                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Weekly Attendance Pattern</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={detailedStats.weeklyPattern}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="percentage" fill="#3B82F6" name="Attendance %" radius={[8, 8, 0, 0]} />
+                <div className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-2xl border border-blue-200/50 dark:border-blue-700/30 shadow-lg">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+                    Weekly Attendance Pattern
+                  </h3>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={detailedStats.weeklyPattern} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+                      <defs>
+                        <linearGradient id="modalBarGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
+                          <stop offset="100%" stopColor="#1D4ED8" stopOpacity={0.7} />
+                        </linearGradient>
+                        <filter id="barShadow">
+                          <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.25" />
+                        </filter>
+                      </defs>
+                      <CartesianGrid strokeDasharray="5 5" stroke="#e5e7eb" strokeOpacity={0.5} vertical={false} />
+                      <XAxis 
+                        dataKey="day" 
+                        stroke="#6b7280"
+                        tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: '#9ca3af' }}
+                        axisLine={{ stroke: '#d1d5db', strokeWidth: 2 }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        stroke="#6b7280"
+                        tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: '#9ca3af' }}
+                        axisLine={{ stroke: '#d1d5db', strokeWidth: 2 }}
+                        label={{ value: 'Attendance %', angle: -90, position: 'insideLeft', style: { fill: '#6b7280', fontWeight: 700 } }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                          border: '2px solid #bfdbfe',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                          padding: '12px'
+                        }}
+                        labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                        itemStyle={{ color: '#3B82F6', fontWeight: 600 }}
+                        cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '16px', fontWeight: 600 }} />
+                      <ReferenceLine 
+                        y={75} 
+                        stroke="#ef4444" 
+                        strokeWidth={2.5} 
+                        strokeDasharray="6 4"
+                        label={{ value: '75% Target', position: 'right', fill: '#ef4444', fontWeight: 700, fontSize: 12 }}
+                      />
+                      <Bar 
+                        dataKey="percentage" 
+                        fill="url(#modalBarGradient)" 
+                        name="Attendance %" 
+                        radius={[12, 12, 0, 0]}
+                        filter="url(#barShadow)"
+                        maxBarSize={80}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -435,10 +886,16 @@ const Analytics = () => {
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Attendance Records</h3>
                   <div className="space-y-2">
-                    {detailedStats.recentRecords.map((record, idx) => (
+                    {detailedStats.recentRecords.map((record, idx) => {
+                      const statusDotClass = 'w-3 h-3 rounded-full ' + (record.status === 'present' ? 'bg-green-500' : 'bg-red-500');
+                      const statusBadgeClass = record.status === 'present'
+                        ? 'px-4 py-2 rounded-full text-sm font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : 'px-4 py-2 rounded-full text-sm font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+                      
+                      return (
                       <div key={idx} className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl">
                         <div className="flex items-center space-x-4">
-                          <div className={`w-3 h-3 rounded-full ${record.status === 'present' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          <div className={statusDotClass}></div>
                           <div>
                             <p className="font-semibold text-gray-900 dark:text-white">
                               {new Date(record.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -447,20 +904,18 @@ const Analytics = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className={`px-4 py-2 rounded-full text-sm font-bold ${
-                            record.status === 'present' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
+                          <span className={statusBadgeClass}>
                             {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                           </span>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
       )}
