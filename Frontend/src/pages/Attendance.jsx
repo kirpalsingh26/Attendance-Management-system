@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { Check, X, Calendar as CalendarIcon, Clock, User, MapPin, ChevronLeft, ChevronRight, RefreshCw, Umbrella } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { attendanceAPI } from '../api';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -16,6 +17,7 @@ const Attendance = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'Lecture', 'Practical'
   const [isHoliday, setIsHoliday] = useState(false);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   const selectedDay = format(selectedDate, 'EEEE');
 
@@ -50,6 +52,66 @@ const Attendance = () => {
   const handleDateSelect = (date) => {
     setSelectedDate(date);
     setShowCalendar(false);
+    // Clear attendance state when date changes
+    setAttendance({});
+    setIsHoliday(false);
+  };
+
+  // Load attendance for the selected date
+  const loadAttendanceForDate = async () => {
+    try {
+      setLoadingAttendance(true);
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      const response = await attendanceAPI.getByDate(formattedDate);
+      
+      console.log('📅 Loading attendance for:', formattedDate);
+      console.log('📝 Response:', response.data);
+      
+      if (response.data.attendance && response.data.attendance.records) {
+        // Check if it's a holiday
+        const isHolidayRecord = response.data.attendance.records.some(
+          record => record.subject === 'Holiday' || record.status === 'holiday'
+        );
+        
+        console.log('🏖️ Is holiday?', isHolidayRecord);
+        console.log('📋 Records:', response.data.attendance.records);
+        
+        setIsHoliday(isHolidayRecord);
+        
+        if (!isHolidayRecord) {
+          // Pre-populate attendance state from existing records
+          const attendanceState = {};
+          const daySchedule = timetable?.schedule?.find(s => s.day === selectedDay);
+          
+          if (daySchedule) {
+            daySchedule.periods.forEach((period, index) => {
+              // Find matching record for this period
+              const record = response.data.attendance.records.find(
+                r => r.subject === period.subject && r.period === `${period.startTime} - ${period.endTime}`
+              );
+              
+              if (record) {
+                const key = `${period.subject}-${index}`;
+                attendanceState[key] = record.status;
+              }
+            });
+          }
+          
+          setAttendance(attendanceState);
+        }
+      } else {
+        // No attendance record for this date, clear state
+        setAttendance({});
+        setIsHoliday(false);
+      }
+    } catch (error) {
+      console.error('Error loading attendance for date:', error);
+      // If no attendance found (404), that's okay - just clear state
+      setAttendance({});
+      setIsHoliday(false);
+    } finally {
+      setLoadingAttendance(false);
+    }
   };
 
   // Fetch timetable when component mounts
@@ -57,6 +119,13 @@ const Attendance = () => {
     console.log('Attendance page mounted, fetching timetable...');
     handleRefreshTimetable();
   }, []);
+
+  // Load attendance when date changes or timetable updates
+  useEffect(() => {
+    if (timetable) {
+      loadAttendanceForDate();
+    }
+  }, [selectedDate, timetable]);
 
   // Function to refresh timetable data
   const handleRefreshTimetable = async () => {
@@ -132,11 +201,7 @@ const Attendance = () => {
   };
 
   const handleSave = async () => {
-    if (!todaySchedule || todaySchedule.periods.length === 0) {
-      return;
-    }
-
-    // If it's a holiday, mark all as absent or skip saving
+    // If it's a holiday, save it regardless of schedule
     if (isHoliday) {
       const records = [{
         subject: 'Holiday',
@@ -152,9 +217,16 @@ const Attendance = () => {
       });
 
       if (result.success) {
-        setSuccess('Holiday marked successfully!');
+        setSuccess('Holiday marked successfully! ✅');
         setTimeout(() => setSuccess(''), 3000);
+        // Reload attendance to ensure state is in sync
+        await loadAttendanceForDate();
       }
+      return;
+    }
+
+    // For regular attendance, check if there's a schedule
+    if (!todaySchedule || todaySchedule.periods.length === 0) {
       return;
     }
 
@@ -177,6 +249,8 @@ const Attendance = () => {
     if (result.success) {
       setSuccess('Attendance marked successfully!');
       setTimeout(() => setSuccess(''), 3000);
+      // Reload attendance to ensure state is in sync
+      await loadAttendanceForDate();
     }
   };
 
@@ -468,6 +542,22 @@ const Attendance = () => {
             </Card>
 
             {(() => {
+              if (loadingAttendance) {
+                return (
+                  <Card className="text-center py-16 hover:shadow-2xl transition-all duration-300">
+                    <div className="relative inline-block mb-6">
+                      <RefreshCw className="w-20 h-20 text-blue-500 dark:text-blue-400 mx-auto animate-spin" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-3">
+                      Loading Attendance...
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Fetching attendance records for {format(selectedDate, 'MMMM d, yyyy')}
+                    </p>
+                  </Card>
+                );
+              }
+              
               if (isHoliday) {
                 return (
                   <Card className="text-center py-16 hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-200 dark:border-amber-800">
@@ -476,14 +566,36 @@ const Attendance = () => {
                       <Umbrella className="w-20 h-20 text-amber-600 dark:text-amber-400 mx-auto relative animate-pulse" />
                     </div>
                     <h3 className="text-3xl font-bold text-amber-900 dark:text-amber-200 mb-3">
-                      Holiday Marked
+                      🏖️ Holiday Marked
                     </h3>
-                    <p className="text-amber-700 dark:text-amber-300 mb-6 text-lg">
+                    <p className="text-amber-700 dark:text-amber-300 mb-4 text-lg">
                       College is off on {format(selectedDate, 'MMMM d, yyyy')} ({selectedDay})
                     </p>
-                    <p className="text-amber-600 dark:text-amber-400 text-sm">
-                      Click "Save Attendance" to record this holiday
+                    <p className="text-amber-600 dark:text-amber-400 text-sm mb-6">
+                      No classes scheduled - All subjects marked as holiday
                     </p>
+                    <div className="flex justify-center">
+                      <button
+                        onClick={handleSave}
+                        disabled={loading}
+                        className="group px-8 py-4 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-600 text-white rounded-xl font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-3"
+                      >
+                        {loading ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Saving Holiday...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-5 h-5 transition-transform group-hover:scale-110" />
+                            <span>Save Holiday</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </Card>
                 );
               }

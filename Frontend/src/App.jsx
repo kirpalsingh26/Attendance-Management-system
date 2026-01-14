@@ -13,6 +13,7 @@ import Timetable from './pages/Timetable';
 import Attendance from './pages/Attendance';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import ShareImport from './pages/ShareImport';
 
 export default function App() {
   return (
@@ -64,6 +65,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/share/:shareId"
+                element={
+                  <ProtectedRoute>
+                    <ShareImport />
                   </ProtectedRoute>
                 }
               />

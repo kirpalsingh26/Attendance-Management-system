@@ -1,22 +1,113 @@
 import { useEffect, useState, useRef } from 'react';
-import { BarChart, Bar, LineChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, X, Target, Award, Zap, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { BarChart, Bar, LineChart, Line, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine, ComposedChart } from 'recharts';
+import { TrendingUp, TrendingDown, Calendar, X, Target, Award, Zap, BarChart3, AlertCircle, CheckCircle2, Clock, CalendarRange, Activity, Save } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { attendanceAPI } from '../api';
+import { attendanceAPI, timetableAPI } from '../api';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 
 const Analytics = () => {
-  const { stats, attendance, fetchStats, fetchAttendance } = useData();
+  const { stats, attendance, timetable, fetchStats, fetchAttendance, fetchTimetable } = useData();
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [detailedStats, setDetailedStats] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [semesterStats, setSemesterStats] = useState(null);
+  const [loadingSemester, setLoadingSemester] = useState(false);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [showSemesterAnalysis, setShowSemesterAnalysis] = useState(false);
+  const [editingDates, setEditingDates] = useState(false);
+  const [savingDates, setSavingDates] = useState(false);
   const modalRef = useRef(null);
 
   useEffect(() => {
     fetchStats();
     fetchAttendance();
-  }, []);
+    
+    // Load semester dates from timetable if available
+    if (timetable?.semesterStartDate && timetable?.semesterEndDate) {
+      const startDate = new Date(timetable.semesterStartDate).toISOString().split('T')[0];
+      const endDate = new Date(timetable.semesterEndDate).toISOString().split('T')[0];
+      setDateRange({ startDate, endDate });
+      // Load semester stats with timetable dates
+      loadSemesterStats({ startDate, endDate });
+    } else {
+      // Load all available data
+      loadSemesterStats();
+    }
+  }, [timetable]);
+
+  const loadSemesterStats = async (customRange = null) => {
+    setLoadingSemester(true);
+    try {
+      const params = customRange || dateRange;
+      const response = await attendanceAPI.getSemesterStats(
+        params.startDate && params.endDate ? params : {}
+      );
+      console.log('📊 Semester stats response:', response.data);
+      
+      // Backend returns data in response.data.stats
+      if (response.data.success) {
+        const stats = response.data.stats;
+        console.log('✅ Stats received:', stats);
+        
+        // Check if there's any data
+        if (stats && (stats.monthlyTrends?.length > 0 || stats.summary?.totalDays > 0)) {
+          setSemesterStats(stats);
+          console.log('✅ Semester stats loaded successfully');
+        } else {
+          console.warn('⚠️ No attendance data found for semester analysis');
+          setSemesterStats(null);
+        }
+      } else {
+        console.warn('⚠️ Response not successful:', response.data);
+        setSemesterStats(null);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch semester stats:', error);
+      console.error('Error details:', error.response?.data);
+      setSemesterStats(null);
+    } finally {
+      setLoadingSemester(false);
+    }
+  };
+
+  const handleDateRangeChange = (field, value) => {
+    const newRange = { ...dateRange, [field]: value };
+    setDateRange(newRange);
+  };
+
+  const applySemesterFilter = () => {
+    if (dateRange.startDate && dateRange.endDate) {
+      loadSemesterStats(dateRange);
+    }
+  };
+
+  const saveSemesterDates = async () => {
+    if (!timetable?._id || !dateRange.startDate || !dateRange.endDate) {
+      alert('Please select both start and end dates');
+      return;
+    }
+
+    setSavingDates(true);
+    try {
+      await timetableAPI.update(timetable._id, {
+        semesterStartDate: new Date(dateRange.startDate),
+        semesterEndDate: new Date(dateRange.endDate)
+      });
+      
+      // Refresh timetable data from context
+      await fetchTimetable();
+      
+      setEditingDates(false);
+      alert('✅ Semester dates saved successfully!');
+      loadSemesterStats(dateRange);
+    } catch (error) {
+      console.error('Failed to save semester dates:', error);
+      alert('❌ Failed to save semester dates. Please try again.');
+    } finally {
+      setSavingDates(false);
+    }
+  };
 
   // Scroll to modal when it opens
   useEffect(() => {
@@ -218,6 +309,307 @@ const Analytics = () => {
             </div>
           </Card>
         </div>
+
+        {/* Semester-based Analysis Section */}
+        <Card className="mb-12 hover:shadow-3xl transition-all duration-500 border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm group">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl blur-xl opacity-60"></div>
+                <div className="relative p-3 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl">
+                  <CalendarRange className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Semester Analysis</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
+                  {timetable?.semester || 'Current Semester'} - {timetable?.academicYear || new Date().getFullYear()}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSemesterAnalysis(!showSemesterAnalysis)}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            >
+              {showSemesterAnalysis ? 'Hide Analysis' : 'Show Full Analysis'}
+            </button>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="mb-6 p-6 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl border-2 border-indigo-200/50 dark:border-indigo-800/50">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100 uppercase tracking-wider">Semester Duration</h4>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                  {timetable?.semesterStartDate && timetable?.semesterEndDate ? (
+                    <span>✓ Saved: {new Date(timetable.semesterStartDate).toLocaleDateString()} - {new Date(timetable.semesterEndDate).toLocaleDateString()}</span>
+                  ) : (
+                    <span>⚠ No semester dates configured. Set dates below for accurate analysis.</span>
+                  )}
+                </p>
+              </div>
+              {!editingDates && timetable?._id && (
+                <button
+                  onClick={() => setEditingDates(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  {timetable?.semesterStartDate ? 'Edit Dates' : 'Set Dates'}
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={applySemesterFilter}
+                disabled={!dateRange.startDate || !dateRange.endDate}
+                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 disabled:cursor-not-allowed"
+              >
+                Apply Filter
+              </button>
+              {editingDates && (
+                <button
+                  onClick={saveSemesterDates}
+                  disabled={!dateRange.startDate || !dateRange.endDate || savingDates}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingDates ? 'Saving...' : 'Save to Timetable'}
+                </button>
+              )}
+              {editingDates && (
+                <button
+                  onClick={() => {
+                    setEditingDates(false);
+                    // Reset to saved dates
+                    if (timetable?.semesterStartDate && timetable?.semesterEndDate) {
+                      const startDate = new Date(timetable.semesterStartDate).toISOString().split('T')[0];
+                      const endDate = new Date(timetable.semesterEndDate).toISOString().split('T')[0];
+                      setDateRange({ startDate, endDate });
+                    }
+                  }}
+                  className="px-6 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  Cancel
+                </button>
+              )}
+              {!editingDates && (
+                <button
+                  onClick={() => {
+                    setDateRange({ startDate: '', endDate: '' });
+                    loadSemesterStats();
+                  }}
+                  className="px-6 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loadingSemester ? (
+            <div className="text-center py-12">
+              <Activity className="w-12 h-12 text-indigo-500 mx-auto mb-4 animate-spin" />
+              <p className="text-slate-600 dark:text-slate-400 font-medium">Loading semester analytics...</p>
+            </div>
+          ) : semesterStats ? (
+            <>
+              {/* Semester Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-bold text-blue-700 dark:text-blue-300 uppercase">Total Days</p>
+                    <Calendar className="w-8 h-8 text-blue-500 opacity-50" />
+                  </div>
+                  <p className="text-5xl font-black text-blue-900 dark:text-blue-100">{semesterStats.summary.totalDays}</p>
+                </div>
+                
+                <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 rounded-xl border-2 border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 uppercase">Avg Attendance</p>
+                    <Activity className="w-8 h-8 text-emerald-500 opacity-50" />
+                  </div>
+                  <p className="text-5xl font-black text-emerald-900 dark:text-emerald-100">{semesterStats.summary.averageAttendance}%</p>
+                </div>
+                
+                <div className={`p-6 rounded-xl border-2 ${
+                  semesterStats.summary.trend === 'good' 
+                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800'
+                    : semesterStats.summary.trend === 'warning'
+                    ? 'bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border-amber-200 dark:border-amber-800'
+                    : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className={`text-sm font-bold uppercase ${
+                      semesterStats.summary.trend === 'good' 
+                        ? 'text-green-700 dark:text-green-300'
+                        : semesterStats.summary.trend === 'warning'
+                        ? 'text-amber-700 dark:text-amber-300'
+                        : 'text-red-700 dark:text-red-300'
+                    }`}>Status</p>
+                    {semesterStats.summary.trend === 'good' ? (
+                      <CheckCircle2 className="w-8 h-8 text-green-500 opacity-50" />
+                    ) : (
+                      <AlertCircle className="w-8 h-8 text-amber-500 opacity-50" />
+                    )}
+                  </div>
+                  <p className={`text-2xl font-black ${
+                    semesterStats.summary.trend === 'good' 
+                      ? 'text-green-900 dark:text-green-100'
+                      : semesterStats.summary.trend === 'warning'
+                      ? 'text-amber-900 dark:text-amber-100'
+                      : 'text-red-900 dark:text-red-100'
+                  }`}>
+                    {semesterStats.summary.trend === 'good' ? 'Excellent' : semesterStats.summary.trend === 'warning' ? 'At Risk' : 'Critical'}
+                  </p>
+                </div>
+              </div>
+
+              {showSemesterAnalysis && (
+                <>
+                  {/* Monthly Trends Chart */}
+                  {semesterStats.monthlyTrends.length > 0 && (
+                    <div className="mb-8 p-8 bg-gradient-to-br from-purple-50/70 via-pink-50/50 to-rose-50/50 dark:from-purple-950/30 dark:via-pink-950/20 dark:to-rose-950/20 rounded-2xl border-2 border-purple-200/50 dark:border-purple-800/50">
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                        <TrendingUp className="w-6 h-6 text-purple-600" />
+                        Monthly Attendance Trends
+                      </h4>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <ComposedChart data={semesterStats.monthlyTrends}>
+                          <defs>
+                            <linearGradient id="monthlyGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                              <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.1} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.3} />
+                          <XAxis 
+                            dataKey="month" 
+                            stroke="#475569"
+                            tick={{ fill: '#475569', fontWeight: 600 }}
+                          />
+                          <YAxis 
+                            domain={[0, 100]}
+                            stroke="#475569"
+                            tick={{ fill: '#475569', fontWeight: 600 }}
+                            label={{ value: 'Attendance %', angle: -90, position: 'insideLeft' }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                              border: '2px solid #8B5CF6',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 40px -12px rgba(0, 0, 0, 0.25)',
+                              padding: '12px 16px'
+                            }}
+                          />
+                          <Legend />
+                          <ReferenceLine y={75} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={2} label="Required 75%" />
+                          <Area 
+                            type="monotone" 
+                            dataKey="percentage" 
+                            fill="url(#monthlyGradient)" 
+                            stroke="#8B5CF6" 
+                            strokeWidth={3}
+                            name="Attendance %"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="percentage" 
+                            stroke="#8B5CF6" 
+                            strokeWidth={3} 
+                            dot={{ fill: '#8B5CF6', r: 6 }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Subject Progress Over Time */}
+                  {semesterStats.subjectProgress.length > 0 && (
+                    <div className="p-8 bg-gradient-to-br from-indigo-50/70 via-blue-50/50 to-cyan-50/50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-cyan-950/20 rounded-2xl border-2 border-indigo-200/50 dark:border-indigo-800/50">
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                        <BarChart3 className="w-6 h-6 text-indigo-600" />
+                        Subject-wise Progress Throughout Semester
+                      </h4>
+                      <div className="space-y-6">
+                        {semesterStats.subjectProgress.map((subject, idx) => (
+                          <div key={idx} className="p-6 bg-white/70 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
+                            <h5 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{subject.subject}</h5>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <LineChart data={subject.months}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.3} />
+                                <XAxis 
+                                  dataKey="month" 
+                                  stroke="#475569"
+                                  tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }}
+                                />
+                                <YAxis 
+                                  domain={[0, 100]}
+                                  stroke="#475569"
+                                  tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }}
+                                />
+                                <Tooltip
+                                  contentStyle={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                                    border: '2px solid #6366F1',
+                                    borderRadius: '12px',
+                                    padding: '8px 12px'
+                                  }}
+                                />
+                                <ReferenceLine y={75} stroke="#EF4444" strokeDasharray="5 5" />
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="percentage" 
+                                  stroke="#6366F1" 
+                                  strokeWidth={3} 
+                                  dot={{ fill: '#6366F1', r: 5 }}
+                                  name="Attendance %"
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/30 dark:to-slate-900/30 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600">
+              <Calendar className="w-16 h-16 text-slate-400 mx-auto mb-4 animate-pulse" />
+              <h4 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">No Attendance Data Yet</h4>
+              <p className="text-slate-600 dark:text-slate-400 font-medium mb-4">Start marking daily attendance to see semester analysis!</p>
+              <div className="text-sm text-slate-500 dark:text-slate-500">
+                <p>📅 Go to Attendance page to mark your first attendance</p>
+                <p>📊 Analysis will appear automatically once you have data</p>
+              </div>
+            </div>
+          )}
+        </Card>
 
         {/* Charts */}
         {subjectData.length > 0 ? (

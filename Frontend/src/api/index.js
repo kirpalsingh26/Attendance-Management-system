@@ -53,7 +53,13 @@ export const timetableAPI = {
   update: (id, data) => API.put(`/timetable/${id}`, data),
   delete: (id) => API.delete(`/timetable/${id}`),
   upload: (data) => API.post('/timetable/upload', data),
-  getTemplate: () => API.get('/timetable/template')
+  getTemplate: () => API.get('/timetable/template'),
+  // Share endpoints
+  generateShareLink: (data) => API.post('/timetable/share', data),
+  getSharedTimetable: (shareId) => API.get(`/timetable/share/${shareId}`),
+  importSharedTimetable: (shareId) => API.post(`/timetable/share/${shareId}/import`),
+  getMyShares: () => API.get('/timetable/my-shares'),
+  revokeShareLink: (shareId) => API.delete(`/timetable/share/${shareId}`)
 };
 
 // Attendance endpoints
@@ -62,6 +68,7 @@ export const attendanceAPI = {
   getByDate: (date) => API.get(`/attendance/${date}`),
   create: (data) => API.post('/attendance', data),
   getStats: () => API.get('/attendance/stats/summary'),
+  getSemesterStats: (params) => API.get('/attendance/stats/semester', { params }),
   getDetailedStats: (subject) => API.get(`/attendance/stats/detailed/${encodeURIComponent(subject)}`),
   delete: (id) => API.delete(`/attendance/${id}`)
 };
