@@ -96,7 +96,6 @@ const Login = () => {
               autoComplete="email"
               required
             />
-            />
 
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2.5 tracking-wide">
