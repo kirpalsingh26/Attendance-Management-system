@@ -14,6 +14,7 @@ const Attendance = () => {
   const [attendance, setAttendance] = useState({});
   const [success, setSuccess] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'Lecture', 'Practical'
 
   const selectedDay = format(selectedDate, 'EEEE');
 
@@ -369,12 +370,94 @@ const Attendance = () => {
         {/* Attendance Grid */}
         {todaySchedule && todaySchedule.periods.length > 0 ? (
           <>
-            <Card title={`Schedule for ${selectedDay}`} className="mb-8 overflow-hidden border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
-              <div className="space-y-4">
-                {todaySchedule.periods.map((period, index) => {
+            {/* Type Filter */}
+            <Card className="mb-6 overflow-hidden border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Filter by Type</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {(() => {
+                      const filteredCount = todaySchedule.periods.filter((period) => {
+                        if (typeFilter === 'all') return true;
+                        const subject = timetable.subjects.find(s => s.name === period.subject);
+                        return subject?.type === typeFilter;
+                      }).length;
+                      return `Showing ${filteredCount} of ${todaySchedule.periods.length} ${filteredCount === 1 ? 'class' : 'classes'}`;
+                    })()}
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setTypeFilter('all')}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
+                      typeFilter === 'all'
+                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl scale-105'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
+                    }`}
+                  >
+                    All Classes
+                  </button>
+                  <button
+                    onClick={() => setTypeFilter('Lecture')}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
+                      typeFilter === 'Lecture'
+                        ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-xl scale-105'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
+                    }`}
+                  >
+                    Lectures
+                  </button>
+                  <button
+                    onClick={() => setTypeFilter('Practical')}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
+                      typeFilter === 'Practical'
+                        ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xl scale-105'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-md'
+                    }`}
+                  >
+                    Practicals
+                  </button>
+                </div>
+              </div>
+            </Card>
+
+            {(() => {
+              const filteredPeriods = todaySchedule.periods.filter((period) => {
+                if (typeFilter === 'all') return true;
+                const subject = timetable.subjects.find(s => s.name === period.subject);
+                return subject?.type === typeFilter;
+              });
+
+              if (filteredPeriods.length === 0) {
+                return (
+                  <Card className="text-center py-16 hover:shadow-2xl transition-all duration-300">
+                    <div className="relative inline-block mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full blur-2xl opacity-20"></div>
+                      <CalendarIcon className="w-20 h-20 text-gray-400 dark:text-gray-500 mx-auto relative animate-pulse" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-3">
+                      No {typeFilter === 'all' ? 'Classes' : typeFilter + 's'} Found
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      There are no {typeFilter === 'all' ? 'classes' : typeFilter.toLowerCase() + 's'} scheduled for {selectedDay}
+                    </p>
+                    <Button onClick={() => setTypeFilter('all')} variant="primary">
+                      Show All Classes
+                    </Button>
+                  </Card>
+                );
+              }
+
+              return (
+                <>
+                  <Card title={`Schedule for ${selectedDay}`} className="mb-8 overflow-hidden border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
+                    <div className="space-y-4">
+                      {filteredPeriods.map((period, index) => {
                   const key = `${period.subject}-${index}`;
                   const status = attendance[key];
-                  const subjectColor = timetable.subjects.find(s => s.name === period.subject)?.color || '#3B82F6';
+                  const subject = timetable.subjects.find(s => s.name === period.subject);
+                  const subjectColor = subject?.color || '#3B82F6';
+                  const subjectType = subject?.type || 'Lecture';
 
                   return (
                     <div
@@ -411,6 +494,17 @@ const Attendance = () => {
                           
                           {/* Period details */}
                           <div className="flex flex-wrap items-center gap-2.5">
+                            {/* Type Badge */}
+                            <span className={`inline-flex items-center px-3.5 py-1.5 rounded-lg font-bold text-sm border transition-all hover:shadow-md ${
+                              subjectType === 'Lecture' 
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/30'
+                                : subjectType === 'Practical'
+                                ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200/50 dark:border-orange-800/30'
+                                : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-800/30'
+                            }`}>
+                              {subjectType}
+                            </span>
+                            
                             {/* Time */}
                             <span className="inline-flex items-center bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3.5 py-1.5 rounded-lg font-semibold text-sm border border-blue-200/50 dark:border-blue-800/30 transition-all hover:shadow-md">
                               <Clock className="w-3.5 h-3.5 mr-1.5" />
@@ -499,6 +593,9 @@ const Attendance = () => {
                 )}
               </button>
             </div>
+          </>
+        );
+      })()}
           </>
         ) : (
           <Card className="text-center py-16 hover:shadow-2xl transition-all duration-300">
