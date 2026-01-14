@@ -43,6 +43,14 @@ const userSchema = new mongoose.Schema({
     enum: ['light', 'dark'],
     default: 'light'
   },
+  semesterStartDate: {
+    type: Date,
+    default: null
+  },
+  semesterEndDate: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

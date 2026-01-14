@@ -39,7 +39,9 @@ exports.sendTokenResponse = (user, statusCode, res) => {
           email: user.email,
           profilePicture: user.profilePicture,
           theme: user.theme,
-          authProvider: user.authProvider
+          authProvider: user.authProvider,
+          semesterStartDate: user.semesterStartDate,
+          semesterEndDate: user.semesterEndDate
         }
       });
   } catch (error) {

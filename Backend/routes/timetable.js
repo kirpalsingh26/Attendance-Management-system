@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const { protect } = require('../middleware/auth');
 const Timetable = require('../models/Timetable');
+const SharedTimetable = require('../models/SharedTimetable');
 const { validateTimetableJSON } = require('../utils/timetableValidator');
 const { parseUniversalTimetable } = require('../utils/timetableParser');
 const { parseTimetableFromImage, validateImage } = require('../utils/ocrParser');
@@ -43,9 +44,39 @@ router.get('/', protect, async (req, res) => {
 // @access  Private
 router.post('/', protect, async (req, res) => {
   try {
-    const { name, semester, academicYear, schedule, subjects } = req.body;
+    let { name, semester, academicYear, schedule, subjects } = req.body;
 
     console.log('Received timetable data:');
+    console.log('Subjects type:', typeof subjects);
+    console.log('Schedule type:', typeof schedule);
+    
+    // Defensive parsing: ensure arrays are not stringified
+    if (typeof subjects === 'string') {
+      try {
+        subjects = JSON.parse(subjects);
+        console.log('Parsed subjects from string');
+      } catch (e) {
+        console.error('Failed to parse subjects string:', e);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid subjects data format'
+        });
+      }
+    }
+    
+    if (typeof schedule === 'string') {
+      try {
+        schedule = JSON.parse(schedule);
+        console.log('Parsed schedule from string');
+      } catch (e) {
+        console.error('Failed to parse schedule string:', e);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid schedule data format'
+        });
+      }
+    }
+
     console.log('Subjects:', JSON.stringify(subjects, null, 2));
     console.log('Schedule:', JSON.stringify(schedule, null, 2));
 
@@ -67,7 +98,7 @@ router.post('/', protect, async (req, res) => {
         },
         { new: true, runValidators: true }
       );
-      console.log('Updated timetable:', JSON.stringify(timetable, null, 2));
+      console.log('Updated timetable');
     } else {
       // Create new timetable if none exists
       console.log('Creating new timetable');
@@ -80,7 +111,7 @@ router.post('/', protect, async (req, res) => {
         subjects,
         isActive: true
       });
-      console.log('Created timetable:', JSON.stringify(timetable, null, 2));
+      console.log('Created timetable');
     }
 
     res.status(201).json({
@@ -573,6 +604,390 @@ router.post('/upload-image', protect, upload.single('image'), async (req, res, n
         'Use manual JSON input as an alternative',
         'Contact support if the problem persists'
       ]
+    });
+  }
+});
+
+// ============================================
+// SHARE TIMETABLE ROUTES
+// ============================================
+
+// @route   POST /api/timetable/share
+// @desc    Generate a share link for user's timetable
+// @access  Private
+router.post('/share', protect, async (req, res) => {
+  try {
+    // Get user's active timetable
+    const timetable = await Timetable.findOne({ user: req.user.id, isActive: true });
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active timetable found. Please create a timetable first.'
+      });
+    }
+
+    // Create shared timetable (1 year expiry by default)
+    // Deep clone to plain objects to avoid Mongoose casting issues
+    const timetableObj = JSON.parse(JSON.stringify(timetable.toObject()));
+    
+    console.log('Creating share link from timetable:');
+    console.log('Subjects type:', typeof timetableObj.subjects);
+    console.log('Schedule type:', typeof timetableObj.schedule);
+    console.log('Subjects is array:', Array.isArray(timetableObj.subjects));
+    console.log('Schedule is array:', Array.isArray(timetableObj.schedule));
+    
+    // Ensure subjects is an array and not stringified
+    let subjects = timetableObj.subjects || [];
+    if (typeof subjects === 'string') {
+      try {
+        subjects = JSON.parse(subjects);
+        console.log('Parsed subjects from string in share creation');
+      } catch (e) {
+        console.error('Failed to parse subjects:', e);
+        subjects = [];
+      }
+    }
+    
+    // Ensure schedule is an array and not stringified
+    let schedule = timetableObj.schedule || [];
+    if (typeof schedule === 'string') {
+      try {
+        schedule = JSON.parse(schedule);
+        console.log('Parsed schedule from string in share creation');
+      } catch (e) {
+        console.error('Failed to parse schedule:', e);
+        schedule = [];
+      }
+    }
+    
+    console.log('Final subjects count:', subjects.length);
+    console.log('Final schedule count:', schedule.length);
+    
+    // Map to plain objects with explicit field copying
+    const plainSubjects = subjects.map(subject => ({
+      name: subject.name || '',
+      code: subject.code || '',
+      type: subject.type || 'Lecture',
+      color: subject.color || '#3B82F6',
+      classTime: subject.classTime || '',
+      teacher: subject.teacher || '',
+      room: subject.room || ''
+    }));
+    
+    const plainSchedule = schedule.map(day => ({
+      day: day.day,
+      periods: (day.periods || []).map(period => ({
+        subject: period.subject || '',
+        startTime: period.startTime || '',
+        endTime: period.endTime || '',
+        teacher: period.teacher || '',
+        room: period.room || ''
+      }))
+    }));
+    
+    console.log('Mapped subjects count:', plainSubjects.length);
+    console.log('Mapped schedule count:', plainSchedule.length);
+    
+    const sharedTimetable = await SharedTimetable.create({
+      owner: req.user.id,
+      timetableData: {
+        name: timetableObj.name || 'My Timetable',
+        semester: timetableObj.semester || '',
+        academicYear: timetableObj.academicYear || '',
+        schedule: plainSchedule,
+        subjects: plainSubjects
+      },
+      permissions: 'import'
+    });
+
+    const shareUrl = `${req.protocol}://${req.get('host')}/share/${sharedTimetable.shareId}`;
+
+    res.status(201).json({
+      success: true,
+      shareId: sharedTimetable.shareId,
+      shareUrl: shareUrl,
+      expiresAt: sharedTimetable.expiresAt,
+      message: 'Share link generated successfully'
+    });
+  } catch (error) {
+    console.error('Error generating share link:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/timetable/share/:shareId
+// @desc    Get shared timetable details (preview)
+// @access  Private
+router.get('/share/:shareId', protect, async (req, res) => {
+  try {
+    const { shareId } = req.params;
+
+    const sharedTimetable = await SharedTimetable.findOne({ shareId })
+      .populate('owner', 'username email');
+
+    if (!sharedTimetable) {
+      return res.status(404).json({
+        success: false,
+        message: 'Share link not found or invalid'
+      });
+    }
+
+    // Check if link is valid
+    if (!sharedTimetable.isValid()) {
+      return res.status(410).json({
+        success: false,
+        message: 'This share link has expired or been revoked'
+      });
+    }
+
+    // Check if user is the owner
+    const isOwner = sharedTimetable.owner._id.toString() === req.user.id;
+
+    // Increment view count
+    sharedTimetable.viewCount += 1;
+    await sharedTimetable.save();
+
+    // Check if user already imported this timetable
+    const alreadyImported = sharedTimetable.importedBy.some(
+      imp => imp.user.toString() === req.user.id
+    );
+
+    res.status(200).json({
+      success: true,
+      sharedTimetable: {
+        shareId: sharedTimetable.shareId,
+        owner: sharedTimetable.owner,
+        timetableData: sharedTimetable.timetableData,
+        permissions: sharedTimetable.permissions,
+        expiresAt: sharedTimetable.expiresAt,
+        viewCount: sharedTimetable.viewCount,
+        importCount: sharedTimetable.importCount,
+        isOwner,
+        alreadyImported
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching shared timetable:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   POST /api/timetable/share/:shareId/import
+// @desc    Import a shared timetable
+// @access  Private
+router.post('/share/:shareId/import', protect, async (req, res) => {
+  try {
+    const { shareId } = req.params;
+
+    const sharedTimetable = await SharedTimetable.findOne({ shareId });
+
+    if (!sharedTimetable) {
+      return res.status(404).json({
+        success: false,
+        message: 'Share link not found or invalid'
+      });
+    }
+
+    // Check if link is valid
+    if (!sharedTimetable.isValid()) {
+      return res.status(410).json({
+        success: false,
+        message: 'This share link has expired or been revoked'
+      });
+    }
+
+    // Check permissions
+    if (sharedTimetable.permissions === 'view') {
+      return res.status(403).json({
+        success: false,
+        message: 'This timetable is view-only and cannot be imported'
+      });
+    }
+
+    // Check if user is trying to import their own timetable
+    if (sharedTimetable.owner.toString() === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot import your own timetable'
+      });
+    }
+
+    // Check if already imported
+    const alreadyImported = sharedTimetable.importedBy.some(
+      imp => imp.user.toString() === req.user.id
+    );
+
+    if (alreadyImported) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already imported this timetable'
+      });
+    }
+
+    // Find or create user's timetable
+    let timetable = await Timetable.findOne({ user: req.user.id, isActive: true });
+
+    // Convert timetableData to plain objects to avoid Mongoose casting issues
+    const rawData = sharedTimetable.timetableData.toObject ? 
+      sharedTimetable.timetableData.toObject() : 
+      JSON.parse(JSON.stringify(sharedTimetable.timetableData));
+
+    // Defensive parsing: ensure arrays are not stringified
+    let subjects = rawData.subjects || [];
+    if (typeof subjects === 'string') {
+      try {
+        subjects = JSON.parse(subjects);
+      } catch (e) {
+        console.error('Failed to parse subjects in import:', e);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid subjects data in shared timetable'
+        });
+      }
+    }
+    
+    let schedule = rawData.schedule || [];
+    if (typeof schedule === 'string') {
+      try {
+        schedule = JSON.parse(schedule);
+      } catch (e) {
+        console.error('Failed to parse schedule in import:', e);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid schedule data in shared timetable'
+        });
+      }
+    }
+
+    const timetableData = {
+      name: rawData.name + ' (Imported)',
+      semester: rawData.semester,
+      academicYear: rawData.academicYear,
+      schedule: schedule,
+      subjects: subjects.map(subject => ({
+        name: subject.name,
+        code: subject.code,
+        type: subject.type,
+        color: subject.color,
+        classTime: subject.classTime,
+        teacher: subject.teacher,
+        room: subject.room
+      })),
+      isActive: true
+    };
+
+    if (timetable) {
+      // Update existing timetable
+      timetable = await Timetable.findByIdAndUpdate(
+        timetable._id,
+        timetableData,
+        { new: true, runValidators: true }
+      );
+    } else {
+      // Create new timetable
+      timetable = await Timetable.create({
+        user: req.user.id,
+        ...timetableData
+      });
+    }
+
+    // Update shared timetable stats
+    sharedTimetable.importCount += 1;
+    sharedTimetable.importedBy.push({
+      user: req.user.id,
+      importedAt: new Date()
+    });
+    await sharedTimetable.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Timetable imported successfully',
+      timetable
+    });
+  } catch (error) {
+    console.error('Error importing timetable:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/timetable/my-shares
+// @desc    Get all share links created by the user
+// @access  Private
+router.get('/my-shares', protect, async (req, res) => {
+  try {
+    const shares = await SharedTimetable.find({ owner: req.user.id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      shares: shares.map(share => ({
+        shareId: share.shareId,
+        timetableName: share.timetableData.name,
+        permissions: share.permissions,
+        isActive: share.isActive,
+        expiresAt: share.expiresAt,
+        viewCount: share.viewCount,
+        importCount: share.importCount,
+        createdAt: share.createdAt,
+        isValid: share.isValid()
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching user shares:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/timetable/share/:shareId
+// @desc    Revoke/delete a share link
+// @access  Private
+router.delete('/share/:shareId', protect, async (req, res) => {
+  try {
+    const { shareId } = req.params;
+
+    const sharedTimetable = await SharedTimetable.findOne({ shareId });
+
+    if (!sharedTimetable) {
+      return res.status(404).json({
+        success: false,
+        message: 'Share link not found'
+      });
+    }
+
+    // Check ownership
+    if (sharedTimetable.owner.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to revoke this share link'
+      });
+    }
+
+    // Soft delete by setting isActive to false
+    sharedTimetable.isActive = false;
+    await sharedTimetable.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Share link revoked successfully'
+    });
+  } catch (error) {
+    console.error('Error revoking share link:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
     });
   }
 });

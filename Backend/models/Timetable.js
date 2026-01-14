@@ -52,6 +52,12 @@ const timetableSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  semesterStartDate: {
+    type: Date
+  },
+  semesterEndDate: {
+    type: Date
+  },
   schedule: [dayScheduleSchema],
   subjects: [{
     name: {

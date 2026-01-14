@@ -167,6 +167,127 @@ router.get('/stats/summary', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/attendance/stats/semester
+// @desc    Get semester-based attendance analytics
+// @access  Private
+router.get('/stats/semester', protect, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    let query = { user: req.user.id };
+    
+    if (startDate && endDate) {
+      query.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const attendance = await Attendance.find(query).sort({ date: 1 });
+
+    // Calculate weekly trends
+    const weeklyTrends = {};
+    const monthlyTrends = {};
+    const subjectTrends = {};
+    
+    attendance.forEach(record => {
+      const date = new Date(record.date);
+      const weekKey = `${date.getFullYear()}-W${Math.ceil((date.getDate() + 6 - date.getDay()) / 7)}`;
+      const monthKey = `${date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+      
+      if (!weeklyTrends[weekKey]) {
+        weeklyTrends[weekKey] = { present: 0, absent: 0, total: 0 };
+      }
+      
+      if (!monthlyTrends[monthKey]) {
+        monthlyTrends[monthKey] = { present: 0, absent: 0, total: 0 };
+      }
+
+      record.records.forEach(({ subject, status }) => {
+        if (!subjectTrends[subject]) {
+          subjectTrends[subject] = {};
+        }
+        
+        if (!subjectTrends[subject][monthKey]) {
+          subjectTrends[subject][monthKey] = { present: 0, absent: 0, total: 0 };
+        }
+
+        const isPresent = status === 'present';
+        
+        weeklyTrends[weekKey].total++;
+        monthlyTrends[monthKey].total++;
+        subjectTrends[subject][monthKey].total++;
+        
+        if (isPresent) {
+          weeklyTrends[weekKey].present++;
+          monthlyTrends[monthKey].present++;
+          subjectTrends[subject][monthKey].present++;
+        } else {
+          weeklyTrends[weekKey].absent++;
+          monthlyTrends[monthKey].absent++;
+          subjectTrends[subject][monthKey].absent++;
+        }
+      });
+    });
+
+    // Format weekly trends
+    const weeklyData = Object.entries(weeklyTrends).map(([week, data]) => ({
+      week,
+      percentage: data.total > 0 ? ((data.present / data.total) * 100).toFixed(2) : 0,
+      present: data.present,
+      absent: data.absent,
+      total: data.total
+    }));
+
+    // Format monthly trends
+    const monthlyData = Object.entries(monthlyTrends).map(([month, data]) => ({
+      month,
+      percentage: data.total > 0 ? ((data.present / data.total) * 100).toFixed(2) : 0,
+      present: data.present,
+      absent: data.absent,
+      total: data.total
+    }));
+
+    // Format subject trends
+    const subjectProgressData = Object.entries(subjectTrends).map(([subject, months]) => ({
+      subject,
+      months: Object.entries(months).map(([month, data]) => ({
+        month,
+        percentage: data.total > 0 ? ((data.present / data.total) * 100).toFixed(2) : 0,
+        present: data.present,
+        absent: data.absent,
+        total: data.total
+      }))
+    }));
+
+    // Calculate semester predictions (if attendance continues at current rate)
+    const totalDays = attendance.length;
+    const avgAttendanceRate = monthlyData.length > 0 
+      ? monthlyData.reduce((sum, month) => sum + parseFloat(month.percentage), 0) / monthlyData.length
+      : 0;
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        weeklyTrends: weeklyData,
+        monthlyTrends: monthlyData,
+        subjectProgress: subjectProgressData,
+        summary: {
+          totalDays: totalDays,
+          averageAttendance: avgAttendanceRate.toFixed(2),
+          trend: avgAttendanceRate >= 75 ? 'good' : avgAttendanceRate >= 60 ? 'warning' : 'critical'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Semester stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // @route   GET /api/attendance/stats/detailed/:subject
 // @desc    Get detailed analytics for a specific subject/class
 // @access  Private

@@ -8,12 +8,14 @@ const User = require('../models/User');
 // @access  Private
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { username, profilePicture, theme } = req.body;
+    const { username, profilePicture, theme, semesterStartDate, semesterEndDate } = req.body;
 
     const updateFields = {};
     if (username) updateFields.username = username;
     if (profilePicture) updateFields.profilePicture = profilePicture;
     if (theme) updateFields.theme = theme;
+    if (semesterStartDate !== undefined) updateFields.semesterStartDate = semesterStartDate;
+    if (semesterEndDate !== undefined) updateFields.semesterEndDate = semesterEndDate;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -29,7 +31,9 @@ router.put('/profile', protect, async (req, res) => {
         email: user.email,
         profilePicture: user.profilePicture,
         theme: user.theme,
-        authProvider: user.authProvider
+        authProvider: user.authProvider,
+        semesterStartDate: user.semesterStartDate,
+        semesterEndDate: user.semesterEndDate
       }
     });
   } catch (error) {
