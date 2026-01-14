@@ -93,7 +93,9 @@ const Login = () => {
               onChange={handleChange}
               icon={<Mail className="w-5 h-5 text-gray-400" />}
               placeholder="you@example.com"
+              autoComplete="email"
               required
+            />
             />
 
             <div>
@@ -110,6 +112,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   required
                   className="w-full pl-12 pr-12 py-3.5 border-2 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-600 dark:text-white transition-all duration-300 shadow-lg hover:shadow-xl font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500"
                 />

@@ -15,9 +15,11 @@ exports.sendTokenResponse = (user, statusCode, res) => {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', // 'none' for cross-origin in production
+    path: '/'
   };
 
+  // Set cookie and send response
   res.status(statusCode)
     .cookie('token', token, options)
     .json({
