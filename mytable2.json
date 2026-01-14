@@ -1,0 +1,208 @@
+{
+  "section": "D2IT_C2",
+  "rules": {
+    "lectureDuration": "1_hour",
+    "labDuration": "2_hours",
+    "labsCombinedIfConsecutive": true
+  },
+  "timetable": {
+    "Monday": [
+      {
+        "startTime": "08:30",
+        "duration": 1,
+        "subject": "DBMS",
+        "type": "Lecture",
+        "faculty": "Pf. Neha Gupta (NG)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "09:30",
+        "duration": 1,
+        "subject": "OS",
+        "type": "Lecture",
+        "faculty": "Dr. Pankaj Bhambri (PB)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "10:30",
+        "duration": 1,
+        "subject": "AET",
+        "type": "Lecture",
+        "faculty": "Pf. Sarabmeet Singh (SSM)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "12:30",
+        "duration": 2,
+        "subject": "DBMS",
+        "type": "Lab",
+        "faculty": "Pf. Neha Gupta (NG)",
+        "room": "HPC_Lab"
+      },
+      {
+        "startTime": "14:30",
+        "duration": 2,
+        "subject": "Java",
+        "type": "Lab",
+        "faculty": "Pf. Vandana (VD)",
+        "room": "OS_Lab"
+      }
+    ],
+
+    "Tuesday": [
+      {
+        "startTime": "08:30",
+        "duration": 2,
+        "subject": "AET",
+        "type": "Lab",
+        "faculty": "Pf. Sarabmeet Singh (SSM)",
+        "room": "DBMS_Lab"
+      },
+      {
+        "startTime": "10:30",
+        "duration": 1,
+        "subject": "DM",
+        "type": "Tutorial",
+        "faculty": "Pf. Jasleen Kaur (JK)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "12:30",
+        "duration": 1,
+        "subject": "DBMS",
+        "type": "Lecture",
+        "faculty": "Pf. Neha Gupta (NG)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "13:30",
+        "duration": 1,
+        "subject": "WT",
+        "type": "Lecture",
+        "faculty": "Pf. Himani Sharma (HM)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "14:30",
+        "duration": 1,
+        "subject": "OS",
+        "type": "Lecture",
+        "faculty": "Dr. Pankaj Bhambri (PB)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "15:30",
+        "duration": 1,
+        "subject": "MC",
+        "type": "Lecture",
+        "faculty": "Dr. Siddharth Jain",
+        "room": "F-119"
+      }
+    ],
+
+    "Wednesday": [
+      {
+        "startTime": "08:30",
+        "duration": 1,
+        "subject": "Indian Constitution",
+        "type": "Lecture",
+        "faculty": "Pf. Manpreet Kaur",
+        "room": "S-221"
+      },
+      {
+        "startTime": "09:30",
+        "duration": 1,
+        "subject": "DM",
+        "type": "Lecture",
+        "faculty": "Pf. Jasleen Kaur (JK)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "10:30",
+        "duration": 1,
+        "subject": "AET",
+        "type": "Lecture",
+        "faculty": "Pf. Sarabmeet Singh (SSM)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "12:30",
+        "duration": 1,
+        "subject": "WT",
+        "type": "Lecture",
+        "faculty": "Pf. Himani Sharma (HM)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "13:30",
+        "duration": 2,
+        "subject": "Java",
+        "type": "Lab",
+        "faculty": "Pf. Vandana (VD)",
+        "room": "OS_Lab"
+      }
+    ],
+
+    "Thursday": [
+      {
+        "startTime": "08:30",
+        "duration": 2,
+        "subject": "OS",
+        "type": "Lab",
+        "faculty": "Dr. Pankaj Bhambri (PB)",
+        "room": "OS_Lab"
+      },
+      {
+        "startTime": "12:30",
+        "duration": 1,
+        "subject": "OS",
+        "type": "Lecture",
+        "faculty": "Dr. Pankaj Bhambri (PB)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "13:30",
+        "duration": 1,
+        "subject": "AET",
+        "type": "Lecture",
+        "faculty": "Pf. Sarabmeet Singh (SSM)",
+        "room": "S-221"
+      },
+      {
+        "startTime": "14:30",
+        "duration": 1,
+        "subject": "WT",
+        "type": "Lecture",
+        "faculty": "Pf. Himani Sharma (HM)",
+        "room": "S-221"
+      }
+    ],
+
+    "Friday": [
+      {
+        "startTime": "08:30",
+        "duration": 2,
+        "subject": "Java",
+        "type": "Lab",
+        "faculty": "Pf. Vandana (VD)",
+        "room": "HPC_Lab"
+      },
+      {
+        "startTime": "12:30",
+        "duration": 1,
+        "subject": "Indian Constitution",
+        "type": "Lecture",
+        "faculty": "Pf. Manpreet Kaur",
+        "room": "S-221"
+      },
+      {
+        "startTime": "14:30",
+        "duration": 2,
+        "subject": "WT",
+        "type": "Lab",
+        "faculty": "Pf. Himani Sharma (HM)",
+        "room": "HPC_Lab"
+      }
+    ]
+  }
+}

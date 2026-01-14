@@ -1,0 +1,75 @@
+{
+  "name": "Example AI Extracted Timetable",
+  "semester": "Spring 2026",
+  "academicYear": "2025-2026",
+  "subjects": [
+    {
+      "name": "Database Management System",
+      "code": "DBMS",
+      "type": "Lecture",
+      "color": "#3B82F6",
+      "teacher": "Prof. Sarah Johnson",
+      "room": "Room 301"
+    },
+    {
+      "name": "Operating Systems",
+      "code": "OS",
+      "type": "Lecture",
+      "color": "#10B981",
+      "teacher": "Dr. Michael Chen",
+      "room": "Room 205"
+    },
+    {
+      "name": "Web Technologies",
+      "code": "WT",
+      "type": "Both",
+      "color": "#F59E0B",
+      "teacher": "Prof. Emily Davis",
+      "room": "Lab 3"
+    }
+  ],
+  "schedule": [
+    {
+      "day": "Monday",
+      "periods": [
+        {
+          "subject": "Database Management System",
+          "startTime": "09:00",
+          "endTime": "10:30",
+          "room": "Room 301",
+          "type": "Lecture",
+          "section": "All"
+        },
+        {
+          "subject": "Operating Systems",
+          "startTime": "10:45",
+          "endTime": "12:15",
+          "room": "Room 205",
+          "type": "Lecture",
+          "section": "All"
+        },
+        {
+          "subject": "Web Technologies",
+          "startTime": "14:00",
+          "endTime": "16:00",
+          "room": "Lab 3",
+          "type": "Practical",
+          "section": "Batch A"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "periods": [
+        {
+          "subject": "Database Management System",
+          "startTime": "09:00",
+          "endTime": "10:30",
+          "room": "Lab 2",
+          "type": "Practical",
+          "section": "Batch A"
+        }
+      ]
+    }
+  ]
+}

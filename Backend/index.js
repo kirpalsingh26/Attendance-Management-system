@@ -1,7 +1,5 @@
-// Only load .env in development
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+// Load .env file (Vercel will override with environment variables)
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -11,9 +9,21 @@ const connectDB = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB:', err.message);
+// Initialize database connection
+let dbConnectionPromise = null;
+
+// Ensure DB is connected before handling requests
+app.use(async (req, res, next) => {
+  try {
+    if (!dbConnectionPromise) {
+      dbConnectionPromise = connectDB();
+    }
+    await dbConnectionPromise;
+    next();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    next(); // Continue anyway, routes will handle missing DB
+  }
 });
 
 // Middleware - CORS must come first
