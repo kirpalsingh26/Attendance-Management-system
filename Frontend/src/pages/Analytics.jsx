@@ -190,27 +190,6 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* 75% Requirement Banner */}
-        <div className="mb-8 relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
-          <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 rounded-3xl shadow-2xl backdrop-blur-sm border border-blue-400/30">
-            <div className="flex items-center justify-between flex-wrap gap-6">
-              <div className="flex items-center space-x-5">
-                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl shadow-xl">
-                  <Target className="w-10 h-10 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Minimum Attendance Requirement</h3>
-                  <p className="text-blue-100 text-base font-medium">Each subject requires at least 75% attendance to meet academic standards</p>
-                </div>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm px-8 py-5 rounded-2xl shadow-xl border-2 border-white/30">
-                <p className="text-5xl font-black text-white">75%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Overall Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <Card className="relative overflow-hidden hover:-translate-y-3 transition-all duration-500 cursor-pointer group border-2 border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm shadow-2xl hover:shadow-3xl">
