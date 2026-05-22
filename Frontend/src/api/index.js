@@ -70,7 +70,8 @@ export const attendanceAPI = {
   getStats: () => API.get('/attendance/stats/summary'),
   getSemesterStats: (params) => API.get('/attendance/stats/semester', { params }),
   getDetailedStats: (subject) => API.get(`/attendance/stats/detailed/${encodeURIComponent(subject)}`),
-  delete: (id) => API.delete(`/attendance/${id}`)
+  delete: (id) => API.delete(`/attendance/${id}`),
+  getDailyStatus: (startDate, endDate) => API.get('/attendance/daily-status', { params: { startDate, endDate } })
 };
 
 export default API;

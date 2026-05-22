@@ -42,6 +42,42 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+
+// @route   GET /api/attendance/daily-status
+// @desc    Get daily attendance status for calendar coloring
+// @access  Private
+router.get('/daily-status', protect, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, message: 'startDate and endDate are required' });
+    }
+
+    const attendanceRecords = await Attendance.find({
+      user: req.user.id,
+      date: { $gte: new Date(startDate), $lte: new Date(endDate) }
+    }).sort({ date: 1 });
+
+    // Map: date string (yyyy-MM-dd) -> { present, absent, total }
+    const statusMap = {};
+    attendanceRecords.forEach(record => {
+      const dateStr = record.date.toISOString().slice(0, 10);
+      const total = record.records.length;
+      const present = record.records.filter(r => r.status === 'present').length;
+      const absent = record.records.filter(r => r.status === 'absent').length;
+      let status = 'absent';
+      if (present === total && total > 0) status = 'full_present';
+      else if (present > 0 && present < total) status = 'partial';
+      else status = 'absent';
+      statusMap[dateStr] = { status, present, absent, total };
+    });
+
+    res.status(200).json({ success: true, data: statusMap });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // @route   GET /api/attendance/:date
 // @desc    Get attendance for a specific date
 // @access  Private

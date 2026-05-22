@@ -18,6 +18,23 @@ const Attendance = () => {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'Lecture', 'Practical'
   const [isHoliday, setIsHoliday] = useState(false);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [calendarStatus, setCalendarStatus] = useState({});
+  // Fetch daily attendance status for the current month
+  useEffect(() => {
+    const fetchCalendarStatus = async () => {
+      const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+      try {
+        const res = await attendanceAPI.getDailyStatus(monthStart, monthEnd);
+        if (res.data.success) {
+          setCalendarStatus(res.data.data);
+        }
+      } catch (err) {
+        setCalendarStatus({});
+      }
+    };
+    fetchCalendarStatus();
+  }, [currentMonth]);
 
   const selectedDay = format(selectedDate, 'EEEE');
 
@@ -431,6 +448,14 @@ const Attendance = () => {
                     const isSelected = isSameDay(day, selectedDate);
                     const isToday = isSameDay(day, new Date());
                     const isCurrentMonth = isSameMonth(day, currentMonth);
+                    let bgColor = '';
+                    if (isCurrentMonth) {
+                      const dateStr = format(day, 'yyyy-MM-dd');
+                      const status = calendarStatus[dateStr]?.status;
+                      if (status === 'full_present') bgColor = 'bg-green-400/80 dark:bg-green-600/80 text-white';
+                      else if (status === 'partial') bgColor = 'bg-yellow-300/80 dark:bg-yellow-500/80 text-white';
+                      else if (status === 'absent') bgColor = 'bg-red-400/80 dark:bg-red-600/80 text-white';
+                    }
 
                     return (
                       <button
@@ -442,7 +467,7 @@ const Attendance = () => {
                             : isToday
                             ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-700 dark:text-blue-400 border-2 border-blue-500 shadow-md'
                             : isCurrentMonth
-                            ? 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white hover:scale-105 hover:shadow-md'
+                            ? `${bgColor} hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-105 hover:shadow-md`
                             : 'text-slate-400 dark:text-slate-600'
                         }`}
                       >
